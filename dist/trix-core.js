@@ -3272,7 +3272,7 @@ http://trix-editor.org/
     };
 
     AttachmentView.prototype.createNodes = function() {
-      var comment, data, element, href, i, key, len, node, ref, shareItem, value;
+      var comment, data, i, key, len, node, ref, shareItem, value;
       shareItem = makeElement({
         tagName: "div",
         attributes: {
@@ -3310,20 +3310,12 @@ http://trix-editor.org/
         shareItem.appendChild(this.progressElement);
         data.trixSerialize = false;
       }
-      if (href = this.getHref()) {
-        element = makeElement("a", {
-          href: href
-        });
-        element.appendChild(shareItem);
-      } else {
-        element = shareItem;
-      }
       for (key in data) {
         value = data[key];
-        element.dataset[key] = value;
+        shareItem.dataset[key] = value;
       }
-      element.setAttribute("contenteditable", false);
-      return [element];
+      shareItem.setAttribute("contenteditable", false);
+      return [shareItem];
     };
 
     AttachmentView.prototype.getClassName = function() {
