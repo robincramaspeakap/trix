@@ -184,7 +184,8 @@ class Trix.Document extends Trix.Object
     @eachBlockAtRange range, (block, textRange, index) ->
       blockList = blockList.editObjectAtIndex index, ->
       if attribute is "attachment"
-        blockList = blockList.removeObjectAtIndex index
+        if textRange[0] isnt textRange[1]
+          blockList = blockList.removeObjectAtIndex index
       else if getBlockConfig(attribute)
           block.addAttribute(attribute, value)
         else
