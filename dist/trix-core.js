@@ -1458,6 +1458,7 @@ http://trix-editor.org/
     bullet: {
       tagName: "li",
       listAttribute: "bulletList",
+      excludesAttributes: ["heading1", "heading2", "heading3"],
       group: false,
       nestable: true,
       test: function(element) {
@@ -1471,6 +1472,7 @@ http://trix-editor.org/
     number: {
       tagName: "li",
       listAttribute: "numberList",
+      excludesAttributes: ["heading1", "heading2", "heading3"],
       group: false,
       nestable: true,
       test: function(element) {
@@ -1481,6 +1483,7 @@ http://trix-editor.org/
       heading: true
     },
     tagName: "h1",
+    excludesAttributes: ["bulletList", "bullet", "numberList", "number"],
     test: function(element) {
       return Trix.tagName(element) === "h1";
     },
@@ -1488,6 +1491,7 @@ http://trix-editor.org/
       heading: true
     },
     tagName: "h2",
+    excludesAttributes: ["bulletList", "bullet", "numberList", "number"],
     test: function(element) {
       return Trix.tagName(element) === "h2";
     },
@@ -1495,6 +1499,7 @@ http://trix-editor.org/
       heading: true
     },
     tagName: "h3",
+    excludesAttributes: ["bulletList", "bullet", "numberList", "number"],
     test: function(element) {
       return Trix.tagName(element) === "h3";
     },
@@ -6213,9 +6218,10 @@ http://trix-editor.org/
     };
 
     Document.prototype.applyBlockAttributeAtRange = function(attributeName, value, range) {
-      var config, document, ref, ref1;
+      var attribute, config, document, excludedAttributeName, i, len, ref, ref1, ref2;
       ref = this.expandRangeToLineBreaksAndSplitBlocks(range), document = ref.document, range = ref.range;
       config = getBlockConfig(attributeName);
+      attribute = Trix.config.blockAttributes[attributeName];
       if (config.listAttribute) {
         document = document.removeLastListAttributeAtRange(range, {
           exceptAttributeName: attributeName
@@ -6225,6 +6231,13 @@ http://trix-editor.org/
         document = document.removeLastTerminalAttributeAtRange(range);
       } else {
         document = document.consolidateBlocksAtRange(range);
+      }
+      if (attribute.excludesAttributes) {
+        ref2 = attribute.excludesAttributes;
+        for (i = 0, len = ref2.length; i < len; i++) {
+          excludedAttributeName = ref2[i];
+          document = document.removeAttributeAtRange(excludedAttributeName, range);
+        }
       }
       return document.addAttributeAtRange(attributeName, value, range);
     };

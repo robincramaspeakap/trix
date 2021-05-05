@@ -2764,6 +2764,7 @@ window.CustomElements.addModule(function(scope) {
     bullet: {
       tagName: "li",
       listAttribute: "bulletList",
+      excludesAttributes: ["heading1", "heading2", "heading3"],
       group: false,
       nestable: true,
       test: function(element) {
@@ -2777,6 +2778,7 @@ window.CustomElements.addModule(function(scope) {
     number: {
       tagName: "li",
       listAttribute: "numberList",
+      excludesAttributes: ["heading1", "heading2", "heading3"],
       group: false,
       nestable: true,
       test: function(element) {
@@ -2787,6 +2789,7 @@ window.CustomElements.addModule(function(scope) {
       heading: true
     },
     tagName: "h1",
+    excludesAttributes: ["bulletList", "bullet", "numberList", "number"],
     test: function(element) {
       return Trix.tagName(element) === "h1";
     },
@@ -2794,6 +2797,7 @@ window.CustomElements.addModule(function(scope) {
       heading: true
     },
     tagName: "h2",
+    excludesAttributes: ["bulletList", "bullet", "numberList", "number"],
     test: function(element) {
       return Trix.tagName(element) === "h2";
     },
@@ -2801,6 +2805,7 @@ window.CustomElements.addModule(function(scope) {
       heading: true
     },
     tagName: "h3",
+    excludesAttributes: ["bulletList", "bullet", "numberList", "number"],
     test: function(element) {
       return Trix.tagName(element) === "h3";
     },
@@ -7519,9 +7524,10 @@ window.CustomElements.addModule(function(scope) {
     };
 
     Document.prototype.applyBlockAttributeAtRange = function(attributeName, value, range) {
-      var config, document, ref, ref1;
+      var attribute, config, document, excludedAttributeName, i, len, ref, ref1, ref2;
       ref = this.expandRangeToLineBreaksAndSplitBlocks(range), document = ref.document, range = ref.range;
       config = getBlockConfig(attributeName);
+      attribute = Trix.config.blockAttributes[attributeName];
       if (config.listAttribute) {
         document = document.removeLastListAttributeAtRange(range, {
           exceptAttributeName: attributeName
@@ -7531,6 +7537,13 @@ window.CustomElements.addModule(function(scope) {
         document = document.removeLastTerminalAttributeAtRange(range);
       } else {
         document = document.consolidateBlocksAtRange(range);
+      }
+      if (attribute.excludesAttributes) {
+        ref2 = attribute.excludesAttributes;
+        for (i = 0, len = ref2.length; i < len; i++) {
+          excludedAttributeName = ref2[i];
+          document = document.removeAttributeAtRange(excludedAttributeName, range);
+        }
       }
       return document.addAttributeAtRange(attributeName, value, range);
     };
