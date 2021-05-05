@@ -1541,7 +1541,7 @@ http://trix-editor.org/
 (function() {
   Trix.config.textAttributes = {
     bold: {
-      tagName: "strong",
+      tagName: "b",
       inheritable: true,
       parser: function(element) {
         var style;
@@ -1550,7 +1550,7 @@ http://trix-editor.org/
       }
     },
     italic: {
-      tagName: "em",
+      tagName: "i",
       inheritable: true,
       parser: function(element) {
         var style;

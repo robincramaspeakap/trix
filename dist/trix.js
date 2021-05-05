@@ -2847,7 +2847,7 @@ window.CustomElements.addModule(function(scope) {
 (function() {
   Trix.config.textAttributes = {
     bold: {
-      tagName: "strong",
+      tagName: "b",
       inheritable: true,
       parser: function(element) {
         var style;
@@ -2856,7 +2856,7 @@ window.CustomElements.addModule(function(scope) {
       }
     },
     italic: {
-      tagName: "em",
+      tagName: "i",
       inheritable: true,
       parser: function(element) {
         var style;
