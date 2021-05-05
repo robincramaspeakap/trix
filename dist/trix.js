@@ -6687,11 +6687,13 @@ window.CustomElements.addModule(function(scope) {
   arraysAreEqual = Trix.arraysAreEqual, normalizeSpaces = Trix.normalizeSpaces, makeElement = Trix.makeElement, tagName = Trix.tagName, getBlockTagNames = Trix.getBlockTagNames, walkTree = Trix.walkTree, findClosestElementFromNode = Trix.findClosestElementFromNode, elementContainsNode = Trix.elementContainsNode, nodeIsAttachmentWrapper = Trix.nodeIsAttachmentWrapper, extend = Trix.extend;
 
   Trix.HTMLParser = (function(superClass) {
-    var allowedAttributes, blockForAttachment, blockForAttributes, breakableWhitespacePattern, elementCanDisplayPreformattedText, elementIsRemovable, getAttachmentAttributes, getBlockElementMargin, getImageDimensions, isBlockElement, isExtraBR, isInsignificantTextNode, leftTrimBreakableWhitespace, nodeFilter, pieceForString, sanitizeHTML, squishBreakableWhitespace, stringEndsWithWhitespace, stringIsAllBreakableWhitespace;
+    var allowedAttributes, allowedProtocols, blockForAttachment, blockForAttributes, breakableWhitespacePattern, elementCanDisplayPreformattedText, elementIsRemovable, getAttachmentAttributes, getBlockElementMargin, getImageDimensions, isAllowedAttribute, isBlockElement, isExtraBR, isInsignificantTextNode, leftTrimBreakableWhitespace, nodeFilter, pieceForString, sanitizeHTML, squishBreakableWhitespace, stringEndsWithWhitespace, stringIsAllBreakableWhitespace;
 
     extend1(HTMLParser, superClass);
 
-    allowedAttributes = "style href src width height class target data-eid data-href data-mime-type data-rel".split(" ");
+    allowedAttributes = "style width height class target data-eid data-href data-mime-type data-rel".split(" ");
+
+    allowedProtocols = "http https".split(" ");
 
     HTMLParser.parse = function(html, options) {
       var parser;
@@ -6753,7 +6755,7 @@ window.CustomElements.addModule(function(scope) {
     };
 
     sanitizeHTML = function(html) {
-      var body, doc, head, i, j, k, len, len1, len2, name, node, nodesToRemove, ref, ref1, style, walker;
+      var body, doc, head, i, j, k, len, len1, len2, name, node, nodesToRemove, ref, ref1, ref2, style, value, walker;
       html = html.replace(/<\/html[^>]*>[^]*$/i, "</html>");
       doc = document.implementation.createHTMLDocument("");
       doc.documentElement.innerHTML = html;
@@ -6772,12 +6774,13 @@ window.CustomElements.addModule(function(scope) {
             if (elementIsRemovable(node)) {
               nodesToRemove.push(node);
             } else {
-              ref1 = slice.call(node.attributes);
-              for (j = 0, len1 = ref1.length; j < len1; j++) {
-                name = ref1[j].name;
-                if (!(indexOf.call(allowedAttributes, name) >= 0 || name.indexOf("data-trix") === 0)) {
-                  node.removeAttribute(name);
-                }
+
+            }
+            ref1 = slice.call(element.attributes);
+            for (j = 0, len1 = ref1.length; j < len1; j++) {
+              ref2 = ref1[j], name = ref2.name, value = ref2.value;
+              if (!isAllowedAttribute(name, value)) {
+                node.removeAttribute(name);
               }
             }
             break;
@@ -7156,6 +7159,22 @@ window.CustomElements.addModule(function(scope) {
       element = makeElement(Trix.config.blockAttributes["default"].tagName);
       this.containerElement.appendChild(element);
       return getBlockElementMargin(element);
+    };
+
+    isAllowedAttribute = function(name, value) {
+      var i, len, protocol;
+      if (name === "href" || name === "src") {
+        for (i = 0, len = allowedProtocols.length; i < len; i++) {
+          protocol = allowedProtocols[i];
+          if (value.indexOf(protocol + ":") === 0) {
+            return true;
+          }
+        }
+      }
+      if (name.indexOf("data-trix") === 0) {
+        return true;
+      }
+      return indexOf.call(allowedAttributes, name) >= 0;
     };
 
     getBlockElementMargin = function(element) {
