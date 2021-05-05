@@ -6938,12 +6938,9 @@ http://trix-editor.org/
       }
       if (selectionIsCollapsed) {
         range = this.getExpandedRangeInDirection(direction);
-        if (direction === "backward") {
-          attachment = this.getAttachmentAtRange(range);
-        }
       }
-      if (attachment) {
-        this.editAttachment(attachment);
+      if (attachment = this.getAttachmentAtRange(range)) {
+        this.removeAttachment(attachment);
         return false;
       } else {
         this.setDocument(this.document.removeTextAtRange(range));

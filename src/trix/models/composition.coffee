@@ -145,11 +145,8 @@ class Trix.Composition extends Trix.BasicObject
 
     if selectionIsCollapsed
       range = @getExpandedRangeInDirection(direction)
-      if direction is "backward"
-        attachment = @getAttachmentAtRange(range)
-
-    if attachment
-      @editAttachment(attachment)
+    if attachment = @getAttachmentAtRange(range)
+      @removeAttachment(attachment)
       false
     else
       @setDocument(@document.removeTextAtRange(range))
