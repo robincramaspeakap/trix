@@ -3272,7 +3272,8 @@ http://trix-editor.org/
       wrapper = makeElement({
         tagName: "div",
         attributes: {
-          "class": "attachment-wrapper"
+          "class": "attachment-wrapper",
+          contenteditable: false
         }
       });
       comment = document.createComment("block");
@@ -3316,7 +3317,6 @@ http://trix-editor.org/
         value = data[key];
         shareItem.dataset[key] = value;
       }
-      shareItem.setAttribute("contenteditable", false);
       wrapper.appendChild(shareItem);
       return [wrapper];
     };

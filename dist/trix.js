@@ -4578,7 +4578,8 @@ window.CustomElements.addModule(function(scope) {
       wrapper = makeElement({
         tagName: "div",
         attributes: {
-          "class": "attachment-wrapper"
+          "class": "attachment-wrapper",
+          contenteditable: false
         }
       });
       comment = document.createComment("block");
@@ -4622,7 +4623,6 @@ window.CustomElements.addModule(function(scope) {
         value = data[key];
         shareItem.dataset[key] = value;
       }
-      shareItem.setAttribute("contenteditable", false);
       wrapper.appendChild(shareItem);
       return [wrapper];
     };
