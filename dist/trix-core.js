@@ -1494,6 +1494,10 @@ http://trix-editor.org/
       test: function(element) {
         return Trix.tagName(element) === "h3";
       }
+    },
+    attachment: {
+      tagName: "div",
+      className: "shareitem"
     }
   };
 
@@ -3118,16 +3122,12 @@ http://trix-editor.org/
 
     extend(AttachmentEditorController, superClass);
 
-    function AttachmentEditorController(attachmentPiece, element, container) {
-      this.attachmentPiece = attachmentPiece;
+    function AttachmentEditorController(attachment, element, container) {
+      this.attachment = attachment;
       this.element = element;
       this.container = container;
       this.uninstall = bind(this.uninstall, this);
-      this.didKeyDownCaption = bind(this.didKeyDownCaption, this);
-      this.didChangeCaption = bind(this.didChangeCaption, this);
-      this.didClickCaption = bind(this.didClickCaption, this);
       this.didClickRemoveButton = bind(this.didClickRemoveButton, this);
-      this.attachment = this.attachmentPiece.attachment;
       if (tagName(this.element) === "a") {
         this.element = this.element.firstChild;
       }
@@ -3148,9 +3148,6 @@ http://trix-editor.org/
 
     AttachmentEditorController.prototype.install = function() {
       this.makeElementMutable();
-      if (this.attachment.isPreviewable()) {
-        this.makeCaptionEditable();
-      }
       return this.addRemoveButton();
     };
 
@@ -3164,28 +3161,6 @@ http://trix-editor.org/
         undo: (function(_this) {
           return function() {
             return delete _this.element.dataset.trixMutable;
-          };
-        })(this)
-      };
-    });
-
-    AttachmentEditorController.prototype.makeCaptionEditable = undoable(function() {
-      var figcaption, handler;
-      figcaption = this.element.querySelector("figcaption");
-      handler = null;
-      return {
-        "do": (function(_this) {
-          return function() {
-            return handler = handleEvent("click", {
-              onElement: figcaption,
-              withCallback: _this.didClickCaption,
-              inPhase: "capturing"
-            });
-          };
-        })(this),
-        undo: (function(_this) {
-          return function() {
-            return handler.destroy();
           };
         })(this)
       };
@@ -3223,88 +3198,11 @@ http://trix-editor.org/
       };
     });
 
-    AttachmentEditorController.prototype.editCaption = undoable(function() {
-      var autoresize, editingFigcaption, figcaption, textarea, textareaClone;
-      textarea = makeElement({
-        tagName: "textarea",
-        className: classNames.attachment.captionEditor,
-        attributes: {
-          placeholder: lang.captionPlaceholder
-        }
-      });
-      textarea.value = this.attachmentPiece.getCaption();
-      textareaClone = textarea.cloneNode();
-      textareaClone.classList.add("trix-autoresize-clone");
-      autoresize = function() {
-        textareaClone.value = textarea.value;
-        return textarea.style.height = textareaClone.scrollHeight + "px";
-      };
-      handleEvent("input", {
-        onElement: textarea,
-        withCallback: autoresize
-      });
-      handleEvent("keydown", {
-        onElement: textarea,
-        withCallback: this.didKeyDownCaption
-      });
-      handleEvent("change", {
-        onElement: textarea,
-        withCallback: this.didChangeCaption
-      });
-      handleEvent("blur", {
-        onElement: textarea,
-        withCallback: this.uninstall
-      });
-      figcaption = this.element.querySelector("figcaption");
-      editingFigcaption = figcaption.cloneNode();
-      return {
-        "do": function() {
-          figcaption.style.display = "none";
-          editingFigcaption.appendChild(textarea);
-          editingFigcaption.appendChild(textareaClone);
-          editingFigcaption.classList.add(classNames.attachment.editingCaption);
-          figcaption.parentElement.insertBefore(editingFigcaption, figcaption);
-          autoresize();
-          return textarea.focus();
-        },
-        undo: function() {
-          editingFigcaption.parentNode.removeChild(editingFigcaption);
-          return figcaption.style.display = null;
-        }
-      };
-    });
-
     AttachmentEditorController.prototype.didClickRemoveButton = function(event) {
       var ref;
       event.preventDefault();
       event.stopPropagation();
       return (ref = this.delegate) != null ? ref.attachmentEditorDidRequestRemovalOfAttachment(this.attachment) : void 0;
-    };
-
-    AttachmentEditorController.prototype.didClickCaption = function(event) {
-      event.preventDefault();
-      return this.editCaption();
-    };
-
-    AttachmentEditorController.prototype.didChangeCaption = function(event) {
-      var caption, ref, ref1;
-      caption = event.target.value.replace(/\s/g, " ").trim();
-      if (caption) {
-        return (ref = this.delegate) != null ? typeof ref.attachmentEditorDidRequestUpdatingAttributesForAttachment === "function" ? ref.attachmentEditorDidRequestUpdatingAttributesForAttachment({
-          caption: caption
-        }, this.attachment) : void 0 : void 0;
-      } else {
-        return (ref1 = this.delegate) != null ? typeof ref1.attachmentEditorDidRequestRemovingAttributeForAttachment === "function" ? ref1.attachmentEditorDidRequestRemovingAttributeForAttachment("caption", this.attachment) : void 0 : void 0;
-      }
-    };
-
-    AttachmentEditorController.prototype.didKeyDownCaption = function(event) {
-      var ref;
-      if (keyNames[event.keyCode] === "return") {
-        event.preventDefault();
-        this.didChangeCaption(event);
-        return (ref = this.delegate) != null ? typeof ref.attachmentEditorDidRequestDeselectingAttachment === "function" ? ref.attachmentEditorDidRequestDeselectingAttachment(this.attachment) : void 0 : void 0;
-      }
     };
 
     AttachmentEditorController.prototype.uninstall = function() {
@@ -3321,7 +3219,7 @@ http://trix-editor.org/
 
 }).call(this);
 (function() {
-  var classNames, htmlContainsTagName, makeElement, selectionElements,
+  var MimeTypes, classNames, htmlContainsTagName, makeElement, selectionElements,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
@@ -3329,16 +3227,17 @@ http://trix-editor.org/
 
   classNames = Trix.config.css.classNames;
 
+  MimeTypes = require("mimetypes");
+
   Trix.AttachmentView = (function(superClass) {
     extend(AttachmentView, superClass);
 
-    AttachmentView.attachmentSelector = "[data-trix-attachment]";
+    AttachmentView.attachmentSelector = "[data-rel=attachment]";
 
     function AttachmentView() {
       AttachmentView.__super__.constructor.apply(this, arguments);
       this.attachment = this.object;
       this.attachment.uploadProgressDelegate = this;
-      this.attachmentPiece = this.options.piece;
     }
 
     AttachmentView.prototype.createContentNodes = function() {
@@ -3346,30 +3245,50 @@ http://trix-editor.org/
     };
 
     AttachmentView.prototype.createNodes = function() {
-      var attributes, data, element, figure, href, i, key, len, node, ref, value;
-      figure = makeElement({
-        tagName: "figure",
-        className: this.getClassName()
-      });
-      if (this.attachment.hasContent()) {
-        figure.innerHTML = this.attachment.getContent();
-      } else {
-        ref = this.createContentNodes();
-        for (i = 0, len = ref.length; i < len; i++) {
-          node = ref[i];
-          figure.appendChild(node);
+      var icon, mimeType, title;
+      mimeType = this.attachment.getContentType();
+      icon = makeElement({
+        tagName: "img",
+        attributes: {
+          "class": "fileicon mrm",
+          src: MimeTypes.iconForMimeType(mimeType)
         }
+      });
+      title = makeElement({
+        tagName: "a",
+        textContent: this.attachment.getFilename(),
+        attributes: {
+          "class": "title",
+          "data-href": this.attachment.getAttribute("url")
+        }
+      });
+      if (MimeTypes.shouldOpenInBrowser(mimeType)) {
+        title.setAttribute("target", "_blank");
+      } else {
+        title.setAttribute("data-mimetype", mimeType);
+        title.setAttribute("download", this.attachment.getFilename());
       }
-      figure.appendChild(this.createCaptionElement());
-      data = {
-        trixAttachment: JSON.stringify(this.attachment),
-        trixContentType: this.attachment.getContentType(),
-        trixId: this.attachment.id
-      };
-      attributes = this.attachmentPiece.getAttributesForAttachment();
-      if (!attributes.isEmpty()) {
-        data.trixAttributes = JSON.stringify(attributes);
+      return [icon, title];
+    };
+
+    AttachmentView.prototype.createNodes = function() {
+      var data, element, href, i, key, len, node, ref, shareItem, value;
+      shareItem = makeElement({
+        tagName: "div",
+        attributes: {
+          "class": this.getClassName()
+        },
+        data: {
+          eid: this.attachment.getAttribute("eid"),
+          rel: "attachment"
+        }
+      });
+      ref = this.createContentNodes();
+      for (i = 0, len = ref.length; i < len; i++) {
+        node = ref[i];
+        shareItem.appendChild(node);
       }
+      data = {};
       if (this.attachment.isPending()) {
         this.progressElement = makeElement({
           tagName: "progress",
@@ -3383,57 +3302,28 @@ http://trix-editor.org/
             trixStoreKey: ["progressElement", this.attachment.id].join("/")
           }
         });
-        figure.appendChild(this.progressElement);
+        shareItem.appendChild(this.progressElement);
         data.trixSerialize = false;
       }
       if (href = this.getHref()) {
         element = makeElement("a", {
           href: href
         });
-        element.appendChild(figure);
+        element.appendChild(shareItem);
       } else {
-        element = figure;
+        element = shareItem;
       }
       for (key in data) {
         value = data[key];
         element.dataset[key] = value;
       }
       element.setAttribute("contenteditable", false);
-      return [selectionElements.create("cursorTarget"), element, selectionElements.create("cursorTarget")];
-    };
-
-    AttachmentView.prototype.createCaptionElement = function() {
-      var caption, figcaption, filename, filesize, span;
-      figcaption = makeElement({
-        tagName: "figcaption",
-        className: classNames.attachment.caption
-      });
-      if (caption = this.attachmentPiece.getCaption()) {
-        figcaption.classList.add(classNames.attachment.captionEdited);
-        figcaption.textContent = caption;
-      } else {
-        if (filename = this.attachment.getFilename()) {
-          figcaption.textContent = filename;
-          if (filesize = this.attachment.getFormattedFilesize()) {
-            figcaption.appendChild(document.createTextNode(" "));
-            span = makeElement({
-              tagName: "span",
-              className: classNames.attachment.size,
-              textContent: filesize
-            });
-            figcaption.appendChild(span);
-          }
-        }
-      }
-      return figcaption;
+      return [element];
     };
 
     AttachmentView.prototype.getClassName = function() {
-      var extension, names;
-      names = [classNames.attachment.container, "" + classNames.attachment.typePrefix + (this.attachment.getType())];
-      if (extension = this.attachment.getExtension()) {
-        names.push(extension);
-      }
+      var names;
+      names = [Trix.config.blockAttributes.attachment.className, this.attachment.isPreviewable() ? "image" : "file"];
       return names.join(" ");
     };
 
@@ -3558,16 +3448,12 @@ http://trix-editor.org/
       this.piece = this.object;
       this.attributes = this.piece.getAttributes();
       ref = this.options, this.textConfig = ref.textConfig, this.context = ref.context;
-      if (this.piece.attachment) {
-        this.attachment = this.piece.attachment;
-      } else {
-        this.string = this.piece.toString();
-      }
+      this.string = this.piece.toString();
     }
 
     PieceView.prototype.createNodes = function() {
       var element, i, innerElement, len, node, nodes;
-      nodes = this.attachment ? this.createAttachmentNodes() : this.createStringNodes();
+      nodes = this.createStringNodes();
       if (element = this.createElement()) {
         innerElement = findInnerElement(element);
         for (i = 0, len = nodes.length; i < len; i++) {
@@ -3577,15 +3463,6 @@ http://trix-editor.org/
         nodes = [element];
       }
       return nodes;
-    };
-
-    PieceView.prototype.createAttachmentNodes = function() {
-      var constructor, view;
-      constructor = this.attachment.isPreviewable() ? Trix.PreviewableAttachmentView : Trix.AttachmentView;
-      view = this.createChildView(constructor, this.piece.attachment, {
-        piece: this.piece
-      });
-      return view.getNodes();
     };
 
     PieceView.prototype.createStringNodes = function() {
@@ -3764,6 +3641,9 @@ http://trix-editor.org/
 
     BlockView.prototype.createNodes = function() {
       var comment, element, i, len, node, nodes, ref, textConfig, textView;
+      if (this.block.hasAttachment()) {
+        return this.createAttachmentNodes();
+      }
       comment = document.createComment("block");
       nodes = [comment];
       if (this.block.isEmpty()) {
@@ -3788,6 +3668,14 @@ http://trix-editor.org/
         }
         return [element];
       }
+    };
+
+    BlockView.prototype.createAttachmentNodes = function() {
+      var attachment, constructor, view;
+      attachment = this.block.getAttachment();
+      constructor = attachment.isPreviewable() ? Trix.PreviewableAttachmentView : Trix.AttachmentView;
+      view = this.createChildView(constructor, attachment);
+      return view.getNodes();
     };
 
     BlockView.prototype.createContainerElement = function(depth) {
@@ -4064,7 +3952,7 @@ http://trix-editor.org/
     };
 
     CompositionController.prototype.installAttachmentEditorForAttachment = function(attachment) {
-      var attachmentPiece, element, ref;
+      var element, ref;
       if (((ref = this.attachmentEditor) != null ? ref.attachment : void 0) === attachment) {
         return;
       }
@@ -4072,8 +3960,7 @@ http://trix-editor.org/
         return;
       }
       this.uninstallAttachmentEditor();
-      attachmentPiece = this.composition.document.getAttachmentPieceForAttachment(attachment);
-      this.attachmentEditor = new Trix.AttachmentEditorController(attachmentPiece, element, this.element);
+      this.attachmentEditor = new Trix.AttachmentEditorController(attachment, element, this.element);
       return this.attachmentEditor.delegate = this;
     };
 
@@ -4091,24 +3978,9 @@ http://trix-editor.org/
       }
     };
 
-    CompositionController.prototype.editAttachmentCaption = function() {
-      var ref;
-      return (ref = this.attachmentEditor) != null ? ref.editCaption() : void 0;
-    };
-
     CompositionController.prototype.didUninstallAttachmentEditor = function() {
       this.attachmentEditor = null;
       return this.render();
-    };
-
-    CompositionController.prototype.attachmentEditorDidRequestUpdatingAttributesForAttachment = function(attributes, attachment) {
-      var ref;
-      if ((ref = this.delegate) != null) {
-        if (typeof ref.compositionControllerWillUpdateAttachment === "function") {
-          ref.compositionControllerWillUpdateAttachment(attachment);
-        }
-      }
-      return this.composition.updateAttributesForAttachment(attributes, attachment);
     };
 
     CompositionController.prototype.attachmentEditorDidRequestRemovingAttributeForAttachment = function(attribute, attachment) {
@@ -4314,281 +4186,6 @@ http://trix-editor.org/
   var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
-  Trix.ImagePreloadOperation = (function(superClass) {
-    extend(ImagePreloadOperation, superClass);
-
-    function ImagePreloadOperation(url) {
-      this.url = url;
-    }
-
-    ImagePreloadOperation.prototype.perform = function(callback) {
-      var image;
-      image = new Image;
-      image.onload = (function(_this) {
-        return function() {
-          image.width = _this.width = image.naturalWidth;
-          image.height = _this.height = image.naturalHeight;
-          return callback(true, image);
-        };
-      })(this);
-      image.onerror = function() {
-        return callback(false);
-      };
-      return image.src = this.url;
-    };
-
-    return ImagePreloadOperation;
-
-  })(Trix.Operation);
-
-}).call(this);
-(function() {
-  var bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    hasProp = {}.hasOwnProperty;
-
-  Trix.Attachment = (function(superClass) {
-    extend(Attachment, superClass);
-
-    Attachment.previewablePattern = /^image(\/(gif|png|jpe?g)|$)/;
-
-    Attachment.attachmentForFile = function(file) {
-      var attachment, attributes;
-      attributes = this.attributesForFile(file);
-      attachment = new this(attributes);
-      attachment.setFile(file);
-      return attachment;
-    };
-
-    Attachment.attributesForFile = function(file) {
-      return new Trix.Hash({
-        filename: file.name,
-        filesize: file.size,
-        contentType: file.type
-      });
-    };
-
-    Attachment.fromJSON = function(attachmentJSON) {
-      return new this(attachmentJSON);
-    };
-
-    function Attachment(attributes) {
-      if (attributes == null) {
-        attributes = {};
-      }
-      this.releaseFile = bind(this.releaseFile, this);
-      Attachment.__super__.constructor.apply(this, arguments);
-      this.attributes = Trix.Hash.box(attributes);
-      this.didChangeAttributes();
-    }
-
-    Attachment.prototype.getAttribute = function(attribute) {
-      return this.attributes.get(attribute);
-    };
-
-    Attachment.prototype.hasAttribute = function(attribute) {
-      return this.attributes.has(attribute);
-    };
-
-    Attachment.prototype.getAttributes = function() {
-      return this.attributes.toObject();
-    };
-
-    Attachment.prototype.setAttributes = function(attributes) {
-      var newAttributes, ref;
-      if (attributes == null) {
-        attributes = {};
-      }
-      newAttributes = this.attributes.merge(attributes);
-      if (!this.attributes.isEqualTo(newAttributes)) {
-        this.attributes = newAttributes;
-        this.didChangeAttributes();
-        return (ref = this.delegate) != null ? typeof ref.attachmentDidChangeAttributes === "function" ? ref.attachmentDidChangeAttributes(this) : void 0 : void 0;
-      }
-    };
-
-    Attachment.prototype.didChangeAttributes = function() {
-      if (this.isPreviewable()) {
-        return this.preloadURL();
-      }
-    };
-
-    Attachment.prototype.isPending = function() {
-      return (this.file != null) && !(this.getURL() || this.getHref());
-    };
-
-    Attachment.prototype.isPreviewable = function() {
-      if (this.attributes.has("previewable")) {
-        return this.attributes.get("previewable");
-      } else {
-        return this.constructor.previewablePattern.test(this.getContentType());
-      }
-    };
-
-    Attachment.prototype.getType = function() {
-      if (this.hasContent()) {
-        return "content";
-      } else if (this.isPreviewable()) {
-        return "preview";
-      } else {
-        return "file";
-      }
-    };
-
-    Attachment.prototype.getURL = function() {
-      return this.attributes.get("url");
-    };
-
-    Attachment.prototype.getHref = function() {
-      return this.attributes.get("href");
-    };
-
-    Attachment.prototype.getFilename = function() {
-      var ref;
-      return (ref = this.attributes.get("filename")) != null ? ref : "";
-    };
-
-    Attachment.prototype.getFilesize = function() {
-      return this.attributes.get("filesize");
-    };
-
-    Attachment.prototype.getFormattedFilesize = function() {
-      var filesize;
-      filesize = this.attributes.get("filesize");
-      if (typeof filesize === "number") {
-        return Trix.config.fileSize.formatter(filesize);
-      } else {
-        return "";
-      }
-    };
-
-    Attachment.prototype.getExtension = function() {
-      var ref;
-      return (ref = this.getFilename().match(/\.(\w+)$/)) != null ? ref[1].toLowerCase() : void 0;
-    };
-
-    Attachment.prototype.getContentType = function() {
-      return this.attributes.get("contentType");
-    };
-
-    Attachment.prototype.hasContent = function() {
-      return this.attributes.has("content");
-    };
-
-    Attachment.prototype.getContent = function() {
-      return this.attributes.get("content");
-    };
-
-    Attachment.prototype.getWidth = function() {
-      return this.attributes.get("width");
-    };
-
-    Attachment.prototype.getHeight = function() {
-      return this.attributes.get("height");
-    };
-
-    Attachment.prototype.getFile = function() {
-      return this.file;
-    };
-
-    Attachment.prototype.setFile = function(file1) {
-      this.file = file1;
-      if (this.isPreviewable()) {
-        return this.preloadFile();
-      }
-    };
-
-    Attachment.prototype.releaseFile = function() {
-      this.releasePreloadedFile();
-      return this.file = null;
-    };
-
-    Attachment.prototype.getUploadProgress = function() {
-      var ref;
-      return (ref = this.uploadProgress) != null ? ref : 0;
-    };
-
-    Attachment.prototype.setUploadProgress = function(value) {
-      var ref;
-      if (this.uploadProgress !== value) {
-        this.uploadProgress = value;
-        return (ref = this.uploadProgressDelegate) != null ? typeof ref.attachmentDidChangeUploadProgress === "function" ? ref.attachmentDidChangeUploadProgress(this) : void 0 : void 0;
-      }
-    };
-
-    Attachment.prototype.toJSON = function() {
-      return this.getAttributes();
-    };
-
-    Attachment.prototype.getCacheKey = function() {
-      return [Attachment.__super__.getCacheKey.apply(this, arguments), this.attributes.getCacheKey(), this.getPreviewURL()].join("/");
-    };
-
-    Attachment.prototype.getPreviewURL = function() {
-      return this.previewURL || this.preloadingURL;
-    };
-
-    Attachment.prototype.setPreviewURL = function(url) {
-      var ref, ref1;
-      if (url !== this.getPreviewURL()) {
-        this.previewURL = url;
-        if ((ref = this.previewDelegate) != null) {
-          if (typeof ref.attachmentDidChangePreviewURL === "function") {
-            ref.attachmentDidChangePreviewURL(this);
-          }
-        }
-        return (ref1 = this.delegate) != null ? typeof ref1.attachmentDidChangePreviewURL === "function" ? ref1.attachmentDidChangePreviewURL(this) : void 0 : void 0;
-      }
-    };
-
-    Attachment.prototype.preloadURL = function() {
-      return this.preload(this.getURL(), this.releaseFile);
-    };
-
-    Attachment.prototype.preloadFile = function() {
-      if (this.file) {
-        this.fileObjectURL = URL.createObjectURL(this.file);
-        return this.preload(this.fileObjectURL);
-      }
-    };
-
-    Attachment.prototype.releasePreloadedFile = function() {
-      if (this.fileObjectURL) {
-        URL.revokeObjectURL(this.fileObjectURL);
-        return this.fileObjectURL = null;
-      }
-    };
-
-    Attachment.prototype.preload = function(url, callback) {
-      var operation;
-      if (url && url !== this.getPreviewURL()) {
-        this.preloadingURL = url;
-        operation = new Trix.ImagePreloadOperation(url);
-        return operation.then((function(_this) {
-          return function(arg) {
-            var height, width;
-            width = arg.width, height = arg.height;
-            _this.setAttributes({
-              width: width,
-              height: height
-            });
-            _this.preloadingURL = null;
-            _this.setPreviewURL(url);
-            return typeof callback === "function" ? callback() : void 0;
-          };
-        })(this));
-      }
-    };
-
-    return Attachment;
-
-  })(Trix.Object);
-
-}).call(this);
-(function() {
-  var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    hasProp = {}.hasOwnProperty;
-
   Trix.Piece = (function(superClass) {
     extend(Piece, superClass);
 
@@ -4717,80 +4314,6 @@ http://trix-editor.org/
     return Piece;
 
   })(Trix.Object);
-
-}).call(this);
-(function() {
-  var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    hasProp = {}.hasOwnProperty;
-
-  Trix.Piece.registerType("attachment", Trix.AttachmentPiece = (function(superClass) {
-    extend(AttachmentPiece, superClass);
-
-    AttachmentPiece.fromJSON = function(pieceJSON) {
-      return new this(Trix.Attachment.fromJSON(pieceJSON.attachment), pieceJSON.attributes);
-    };
-
-    function AttachmentPiece(attachment) {
-      this.attachment = attachment;
-      AttachmentPiece.__super__.constructor.apply(this, arguments);
-      this.length = 1;
-      this.ensureAttachmentExclusivelyHasAttribute("href");
-    }
-
-    AttachmentPiece.prototype.ensureAttachmentExclusivelyHasAttribute = function(attribute) {
-      if (this.hasAttribute(attribute) && this.attachment.hasAttribute(attribute)) {
-        return this.attributes = this.attributes.remove(attribute);
-      }
-    };
-
-    AttachmentPiece.prototype.getValue = function() {
-      return this.attachment;
-    };
-
-    AttachmentPiece.prototype.isSerializable = function() {
-      return !this.attachment.isPending();
-    };
-
-    AttachmentPiece.prototype.getCaption = function() {
-      var ref;
-      return (ref = this.attributes.get("caption")) != null ? ref : "";
-    };
-
-    AttachmentPiece.prototype.getAttributesForAttachment = function() {
-      return this.attributes.slice(["caption"]);
-    };
-
-    AttachmentPiece.prototype.canBeGrouped = function() {
-      return AttachmentPiece.__super__.canBeGrouped.apply(this, arguments) && !this.attachment.hasAttribute("href");
-    };
-
-    AttachmentPiece.prototype.isEqualTo = function(piece) {
-      var ref;
-      return AttachmentPiece.__super__.isEqualTo.apply(this, arguments) && this.attachment.id === (piece != null ? (ref = piece.attachment) != null ? ref.id : void 0 : void 0);
-    };
-
-    AttachmentPiece.prototype.toString = function() {
-      return Trix.OBJECT_REPLACEMENT_CHARACTER;
-    };
-
-    AttachmentPiece.prototype.toJSON = function() {
-      var json;
-      json = AttachmentPiece.__super__.toJSON.apply(this, arguments);
-      json.attachment = this.attachment;
-      return json;
-    };
-
-    AttachmentPiece.prototype.getCacheKey = function() {
-      return [AttachmentPiece.__super__.getCacheKey.apply(this, arguments), this.attachment.getCacheKey()].join("/");
-    };
-
-    AttachmentPiece.prototype.toConsole = function() {
-      return JSON.stringify(this.toString());
-    };
-
-    return AttachmentPiece;
-
-  })(Trix.Piece));
 
 }).call(this);
 (function() {
@@ -5179,12 +4702,6 @@ http://trix-editor.org/
   Trix.Text = (function(superClass) {
     extend(Text, superClass);
 
-    Text.textForAttachmentWithAttributes = function(attachment, attributes) {
-      var piece;
-      piece = new Trix.AttachmentPiece(attachment, attributes);
-      return new this([piece]);
-    };
-
     Text.textForStringWithAttributes = function(string, attributes) {
       var piece;
       piece = new Trix.StringPiece(string, attributes);
@@ -5361,73 +4878,6 @@ http://trix-editor.org/
       return this.getStringAtRange([length - string.length, length]) === string;
     };
 
-    Text.prototype.getAttachmentPieces = function() {
-      var i, len, piece, ref, results;
-      ref = this.pieceList.toArray();
-      results = [];
-      for (i = 0, len = ref.length; i < len; i++) {
-        piece = ref[i];
-        if (piece.attachment != null) {
-          results.push(piece);
-        }
-      }
-      return results;
-    };
-
-    Text.prototype.getAttachments = function() {
-      var i, len, piece, ref, results;
-      ref = this.getAttachmentPieces();
-      results = [];
-      for (i = 0, len = ref.length; i < len; i++) {
-        piece = ref[i];
-        results.push(piece.attachment);
-      }
-      return results;
-    };
-
-    Text.prototype.getAttachmentAndPositionById = function(attachmentId) {
-      var i, len, piece, position, ref, ref1;
-      position = 0;
-      ref = this.pieceList.toArray();
-      for (i = 0, len = ref.length; i < len; i++) {
-        piece = ref[i];
-        if (((ref1 = piece.attachment) != null ? ref1.id : void 0) === attachmentId) {
-          return {
-            attachment: piece.attachment,
-            position: position
-          };
-        }
-        position += piece.length;
-      }
-      return {
-        attachment: null,
-        position: null
-      };
-    };
-
-    Text.prototype.getAttachmentById = function(attachmentId) {
-      var attachment, position, ref;
-      ref = this.getAttachmentAndPositionById(attachmentId), attachment = ref.attachment, position = ref.position;
-      return attachment;
-    };
-
-    Text.prototype.getRangeOfAttachment = function(attachment) {
-      var position, ref;
-      ref = this.getAttachmentAndPositionById(attachment.id), attachment = ref.attachment, position = ref.position;
-      if (attachment != null) {
-        return [position, position + 1];
-      }
-    };
-
-    Text.prototype.updateAttributesForAttachment = function(attributes, attachment) {
-      var range;
-      if (range = this.getRangeOfAttachment(attachment)) {
-        return this.addAttributesAtRange(attributes, range);
-      } else {
-        return this;
-      }
-    };
-
     Text.prototype.getLength = function() {
       return this.pieceList.getEndPosition();
     };
@@ -5512,10 +4962,19 @@ http://trix-editor.org/
 
     extend(Block, superClass);
 
+    Block.blockForAttachment = function(attachment) {
+      return new Trix.AttachmentBlock(attachment);
+    };
+
     Block.fromJSON = function(blockJSON) {
-      var text;
-      text = Trix.Text.fromJSON(blockJSON.text);
-      return new this(text, blockJSON.attributes);
+      var attachment, text;
+      if (blockJSON.attachment != null) {
+        attachment = Trix.Attachment.fromJSON(blockJSON.attachment);
+        return this.blockForAttachment(attachment);
+      } else {
+        text = Trix.Text.fromJSON(blockJSON.text);
+        return new this(text, blockJSON.attributes);
+      }
     };
 
     function Block(text, attributes) {
@@ -5536,6 +4995,10 @@ http://trix-editor.org/
 
     Block.prototype.isEqualTo = function(block) {
       return Block.__super__.isEqualTo.apply(this, arguments) || (this.text.isEqualTo(block != null ? block.text : void 0) && arraysAreEqual(this.attributes, block != null ? block.attributes : void 0));
+    };
+
+    Block.prototype.hasAttachment = function() {
+      return false;
     };
 
     Block.prototype.copyWithText = function(text) {
@@ -5843,20 +5306,78 @@ http://trix-editor.org/
 
 }).call(this);
 (function() {
-  var arraysAreEqual, elementContainsNode, findClosestElementFromNode, getBlockTagNames, makeElement, nodeIsAttachmentElement, normalizeSpaces, tagName, walkTree,
-    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  var arraysAreEqual, extend,
+    extend1 = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
+
+  arraysAreEqual = Trix.arraysAreEqual, extend = Trix.extend;
+
+  Trix.AttachmentBlock = (function(superClass) {
+    extend1(AttachmentBlock, superClass);
+
+    function AttachmentBlock(attachment) {
+      this.attachment = attachment;
+      AttachmentBlock.__super__.constructor.call(this, null, ["attachment"]);
+    }
+
+    AttachmentBlock.prototype.hasAttachment = function() {
+      return true;
+    };
+
+    AttachmentBlock.prototype.getAttachment = function() {
+      return this.attachment;
+    };
+
+    AttachmentBlock.prototype.isEmpty = function() {
+      return false;
+    };
+
+    AttachmentBlock.prototype.isListItem = function() {
+      return false;
+    };
+
+    AttachmentBlock.prototype.toJSON = function() {
+      return {
+        attachment: this.attachment.toJSON()
+      };
+    };
+
+    AttachmentBlock.prototype.getLength = function() {
+      return 1;
+    };
+
+    AttachmentBlock.prototype.canBeConsolidatedWith = function() {
+      return false;
+    };
+
+    AttachmentBlock.prototype.canBeGrouped = function() {
+      return false;
+    };
+
+    AttachmentBlock.prototype.canBeGroupedWith = function() {
+      return false;
+    };
+
+    return AttachmentBlock;
+
+  })(Trix.Block);
+
+}).call(this);
+(function() {
+  var arraysAreEqual, elementContainsNode, extend, findClosestElementFromNode, getBlockTagNames, makeElement, nodeIsAttachmentElement, normalizeSpaces, tagName, walkTree,
+    extend1 = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty,
     slice = [].slice,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  arraysAreEqual = Trix.arraysAreEqual, normalizeSpaces = Trix.normalizeSpaces, makeElement = Trix.makeElement, tagName = Trix.tagName, getBlockTagNames = Trix.getBlockTagNames, walkTree = Trix.walkTree, findClosestElementFromNode = Trix.findClosestElementFromNode, elementContainsNode = Trix.elementContainsNode, nodeIsAttachmentElement = Trix.nodeIsAttachmentElement;
+  arraysAreEqual = Trix.arraysAreEqual, normalizeSpaces = Trix.normalizeSpaces, makeElement = Trix.makeElement, tagName = Trix.tagName, getBlockTagNames = Trix.getBlockTagNames, walkTree = Trix.walkTree, findClosestElementFromNode = Trix.findClosestElementFromNode, elementContainsNode = Trix.elementContainsNode, nodeIsAttachmentElement = Trix.nodeIsAttachmentElement, extend = Trix.extend;
 
   Trix.HTMLParser = (function(superClass) {
-    var allowedAttributes, blockForAttributes, breakableWhitespacePattern, elementCanDisplayPreformattedText, elementIsRemovable, getAttachmentAttributes, getBlockElementMargin, getImageDimensions, isBlockElement, isExtraBR, isInsignificantTextNode, leftTrimBreakableWhitespace, nodeFilter, pieceForAttachment, pieceForString, sanitizeHTML, squishBreakableWhitespace, stringEndsWithWhitespace, stringIsAllBreakableWhitespace;
+    var allowedAttributes, blockForAttachment, blockForAttributes, breakableWhitespacePattern, elementCanDisplayPreformattedText, elementIsRemovable, getAttachmentAttributes, getBlockElementMargin, getImageDimensions, isBlockElement, isExtraBR, isInsignificantTextNode, leftTrimBreakableWhitespace, nodeFilter, pieceForString, sanitizeHTML, squishBreakableWhitespace, stringEndsWithWhitespace, stringIsAllBreakableWhitespace;
 
-    extend(HTMLParser, superClass);
+    extend1(HTMLParser, superClass);
 
-    allowedAttributes = "style href src width height class".split(" ");
+    allowedAttributes = "style href src width height class target data-eid data-mime-type data-rel".split(" ");
 
     HTMLParser.parse = function(html, options) {
       var parser;
@@ -5980,7 +5501,9 @@ http://trix-editor.org/
         case Node.TEXT_NODE:
           return this.processTextNode(node);
         case Node.ELEMENT_NODE:
-          this.appendBlockForElement(node);
+          if (!nodeIsAttachmentElement(node)) {
+            this.appendBlockForElement(node);
+          }
           return this.processElement(node);
       }
     };
@@ -6035,14 +5558,11 @@ http://trix-editor.org/
     };
 
     HTMLParser.prototype.processElement = function(element) {
-      var attributes, key, ref, textAttributes, value;
+      var attributes;
       if (nodeIsAttachmentElement(element)) {
         attributes = getAttachmentAttributes(element);
-        if (Object.keys(attributes).length) {
-          textAttributes = this.getTextAttributes(element);
-          this.appendAttachmentWithAttributes(attributes, textAttributes);
-          element.innerHTML = "";
-        }
+        this.appendAttachmentForAttributesWithElement(attributes, element);
+        element.innerHTML = "";
         return this.processedElements.push(element);
       } else {
         switch (tagName(element)) {
@@ -6050,18 +5570,6 @@ http://trix-editor.org/
             if (!(isExtraBR(element) || isBlockElement(element.nextSibling))) {
               this.appendStringWithAttributes("\n", this.getTextAttributes(element));
             }
-            return this.processedElements.push(element);
-          case "img":
-            attributes = {
-              url: element.getAttribute("src"),
-              contentType: "image"
-            };
-            ref = getImageDimensions(element);
-            for (key in ref) {
-              value = ref[key];
-              attributes[key] = value;
-            }
-            this.appendAttachmentWithAttributes(attributes, this.getTextAttributes(element));
             return this.processedElements.push(element);
           case "tr":
             if (element.parentNode.firstChild !== element) {
@@ -6092,8 +5600,12 @@ http://trix-editor.org/
       return this.appendPiece(pieceForString(string, attributes));
     };
 
-    HTMLParser.prototype.appendAttachmentWithAttributes = function(attachment, attributes) {
-      return this.appendPiece(pieceForAttachment(attachment, attributes));
+    HTMLParser.prototype.appendAttachmentForAttributesWithElement = function(attachment, element) {
+      var block;
+      this.blockElements.push(element);
+      block = blockForAttachment(attachment);
+      this.blocks.push(block);
+      return block;
     };
 
     HTMLParser.prototype.appendPiece = function(piece) {
@@ -6139,19 +5651,6 @@ http://trix-editor.org/
       };
     };
 
-    pieceForAttachment = function(attachment, attributes) {
-      var type;
-      if (attributes == null) {
-        attributes = {};
-      }
-      type = "attachment";
-      return {
-        attachment: attachment,
-        attributes: attributes,
-        type: type
-      };
-    };
-
     blockForAttributes = function(attributes) {
       var text;
       if (attributes == null) {
@@ -6164,8 +5663,21 @@ http://trix-editor.org/
       };
     };
 
+    blockForAttachment = function(attachment, attributes) {
+      var text;
+      if (attributes == null) {
+        attributes = {};
+      }
+      text = [];
+      return {
+        text: text,
+        attributes: attributes,
+        attachment: attachment
+      };
+    };
+
     HTMLParser.prototype.getTextAttributes = function(element) {
-      var attribute, attributeInheritedFromBlock, attributes, blockElement, config, i, json, key, len, ref, ref1, ref2, value;
+      var attribute, attributeInheritedFromBlock, attributes, blockElement, config, i, len, ref, ref1, value;
       attributes = {};
       ref = Trix.config.textAttributes;
       for (attribute in ref) {
@@ -6191,15 +5703,6 @@ http://trix-editor.org/
           }
         }
       }
-      if (nodeIsAttachmentElement(element)) {
-        if (json = element.getAttribute("data-trix-attributes")) {
-          ref2 = JSON.parse(json);
-          for (key in ref2) {
-            value = ref2[key];
-            attributes[key] = value;
-          }
-        }
-      }
       return attributes;
     };
 
@@ -6212,10 +5715,12 @@ http://trix-editor.org/
           config = ref[attribute];
           if (config.parse !== false) {
             if (tagName(element) === config.tagName) {
-              if ((typeof config.test === "function" ? config.test(element) : void 0) || !config.test) {
-                attributes.push(attribute);
-                if (config.listAttribute) {
-                  attributes.push(config.listAttribute);
+              if (!config.className || element.classList.contains(config.className)) {
+                if (!config.test || config.test(element)) {
+                  attributes.push(attribute);
+                  if (config.listAttribute) {
+                    attributes.push(config.listAttribute);
+                  }
                 }
               }
             }
@@ -6239,7 +5744,15 @@ http://trix-editor.org/
     };
 
     getAttachmentAttributes = function(element) {
-      return JSON.parse(element.getAttribute("data-trix-attachment"));
+      var isImage;
+      isImage = element.classList.contains("image");
+      return {
+        contentType: element.getAttribute("data-mime-type"),
+        eid: element.getAttribute("data-eid"),
+        filename: isImage ? "" : element.querySelector("a").textContent,
+        previewable: isImage,
+        url: isImage ? element.querySelector("img").getAttribute("src") : element.querySelector("a").getAttribute("href")
+      };
     };
 
     getImageDimensions = function(element) {
@@ -7016,38 +6529,29 @@ http://trix-editor.org/
       }
     };
 
-    Document.prototype.getAttachmentPieces = function() {
-      var attachmentPieces;
-      attachmentPieces = [];
-      this.blockList.eachObject(function(arg) {
-        var text;
-        text = arg.text;
-        return attachmentPieces = attachmentPieces.concat(text.getAttachmentPieces());
-      });
-      return attachmentPieces;
-    };
-
     Document.prototype.getAttachments = function() {
-      var i, len, piece, ref, results;
-      ref = this.getAttachmentPieces();
+      var block, i, len, ref, results;
+      ref = this.getBlocks();
       results = [];
       for (i = 0, len = ref.length; i < len; i++) {
-        piece = ref[i];
-        results.push(piece.attachment);
+        block = ref[i];
+        if (block.attachment != null) {
+          results.push(block.attachment);
+        }
       }
       return results;
     };
 
     Document.prototype.getRangeOfAttachment = function(attachment) {
-      var i, index, len, position, ref, text, textRange;
+      var block, i, index, len, position, ref;
       position = 0;
-      ref = this.blockList.toArray();
+      ref = this.getBlocks();
       for (index = i = 0, len = ref.length; i < len; index = ++i) {
-        text = ref[index].text;
-        if (textRange = text.getRangeOfAttachment(attachment)) {
-          return normalizeRange([position + textRange[0], position + textRange[1]]);
+        block = ref[index];
+        if (block.hasAttachment() && block.getAttachment().isEqualTo(attachment)) {
+          return normalizeRange([position, position + block.text.getLength()]);
         }
-        position += text.getLength();
+        position += block.text.getLength();
       }
     };
 
@@ -7386,9 +6890,9 @@ http://trix-editor.org/
     };
 
     Composition.prototype.insertAttachment = function(attachment) {
-      var text;
-      text = Trix.Text.textForAttachmentWithAttributes(attachment, this.currentAttributes);
-      return this.insertBlock(new Trix.Block(text));
+      var block;
+      block = Trix.Block.blockForAttachment(attachment);
+      return this.insertBlock(block);
     };
 
     Composition.prototype.deleteInDirection = function(direction) {
@@ -8257,6 +7761,282 @@ http://trix-editor.org/
     return Editor;
 
   })();
+
+}).call(this);
+(function() {
+  var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
+
+  Trix.ImagePreloadOperation = (function(superClass) {
+    extend(ImagePreloadOperation, superClass);
+
+    function ImagePreloadOperation(url) {
+      this.url = url;
+    }
+
+    ImagePreloadOperation.prototype.perform = function(callback) {
+      var image;
+      image = new Image;
+      image.onload = (function(_this) {
+        return function() {
+          image.width = _this.width = image.naturalWidth;
+          image.height = _this.height = image.naturalHeight;
+          return callback(true, image);
+        };
+      })(this);
+      image.onerror = function() {
+        return callback(false);
+      };
+      return image.src = this.url;
+    };
+
+    return ImagePreloadOperation;
+
+  })(Trix.Operation);
+
+}).call(this);
+(function() {
+  var bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
+
+  Trix.Attachment = (function(superClass) {
+    extend(Attachment, superClass);
+
+    Attachment.previewablePattern = /^image(\/(gif|png|jpe?g)|$)/;
+
+    Attachment.attachmentForFile = function(file) {
+      var attachment, attributes;
+      attributes = this.attributesForFile(file);
+      attachment = new this(attributes);
+      attachment.setFile(file);
+      return attachment;
+    };
+
+    Attachment.attributesForFile = function(file) {
+      return new Trix.Hash({
+        eid: file.EID,
+        filename: file.name,
+        filesize: file.size,
+        contentType: file.type
+      });
+    };
+
+    Attachment.fromJSON = function(attachmentJSON) {
+      return new this(attachmentJSON);
+    };
+
+    function Attachment(attributes) {
+      if (attributes == null) {
+        attributes = {};
+      }
+      this.releaseFile = bind(this.releaseFile, this);
+      Attachment.__super__.constructor.apply(this, arguments);
+      this.attributes = Trix.Hash.box(attributes);
+      this.didChangeAttributes();
+    }
+
+    Attachment.prototype.getAttribute = function(attribute) {
+      return this.attributes.get(attribute);
+    };
+
+    Attachment.prototype.hasAttribute = function(attribute) {
+      return this.attributes.has(attribute);
+    };
+
+    Attachment.prototype.getAttributes = function() {
+      return this.attributes.toObject();
+    };
+
+    Attachment.prototype.setAttributes = function(attributes) {
+      var newAttributes, ref;
+      if (attributes == null) {
+        attributes = {};
+      }
+      newAttributes = this.attributes.merge(attributes);
+      if (!this.attributes.isEqualTo(newAttributes)) {
+        this.attributes = newAttributes;
+        this.didChangeAttributes();
+        return (ref = this.delegate) != null ? typeof ref.attachmentDidChangeAttributes === "function" ? ref.attachmentDidChangeAttributes(this) : void 0 : void 0;
+      }
+    };
+
+    Attachment.prototype.didChangeAttributes = function() {
+      if (this.isPreviewable()) {
+        return this.preloadURL();
+      }
+    };
+
+    Attachment.prototype.isPending = function() {
+      return (this.file != null) && !(this.getURL() || this.getHref());
+    };
+
+    Attachment.prototype.isPreviewable = function() {
+      if (this.attributes.has("previewable")) {
+        return this.attributes.get("previewable");
+      } else {
+        return this.constructor.previewablePattern.test(this.getContentType());
+      }
+    };
+
+    Attachment.prototype.getType = function() {
+      if (this.hasContent()) {
+        return "content";
+      } else if (this.isPreviewable()) {
+        return "preview";
+      } else {
+        return "file";
+      }
+    };
+
+    Attachment.prototype.getURL = function() {
+      return this.attributes.get("url");
+    };
+
+    Attachment.prototype.getHref = function() {
+      return this.attributes.get("href");
+    };
+
+    Attachment.prototype.getFilename = function() {
+      var ref;
+      return (ref = this.attributes.get("filename")) != null ? ref : "";
+    };
+
+    Attachment.prototype.getFilesize = function() {
+      return this.attributes.get("filesize");
+    };
+
+    Attachment.prototype.getFormattedFilesize = function() {
+      var filesize;
+      filesize = this.attributes.get("filesize");
+      if (typeof filesize === "number") {
+        return Trix.config.fileSize.formatter(filesize);
+      } else {
+        return "";
+      }
+    };
+
+    Attachment.prototype.getExtension = function() {
+      var ref;
+      return (ref = this.getFilename().match(/\.(\w+)$/)) != null ? ref[1].toLowerCase() : void 0;
+    };
+
+    Attachment.prototype.getContentType = function() {
+      return this.attributes.get("contentType");
+    };
+
+    Attachment.prototype.hasContent = function() {
+      return this.attributes.has("content");
+    };
+
+    Attachment.prototype.getContent = function() {
+      return this.attributes.get("content");
+    };
+
+    Attachment.prototype.getWidth = function() {
+      return this.attributes.get("width");
+    };
+
+    Attachment.prototype.getHeight = function() {
+      return this.attributes.get("height");
+    };
+
+    Attachment.prototype.getFile = function() {
+      return this.file;
+    };
+
+    Attachment.prototype.setFile = function(file1) {
+      this.file = file1;
+      if (this.isPreviewable()) {
+        return this.preloadFile();
+      }
+    };
+
+    Attachment.prototype.releaseFile = function() {
+      this.releasePreloadedFile();
+      return this.file = null;
+    };
+
+    Attachment.prototype.getUploadProgress = function() {
+      var ref;
+      return (ref = this.uploadProgress) != null ? ref : 0;
+    };
+
+    Attachment.prototype.setUploadProgress = function(value) {
+      var ref;
+      if (this.uploadProgress !== value) {
+        this.uploadProgress = value;
+        return (ref = this.uploadProgressDelegate) != null ? typeof ref.attachmentDidChangeUploadProgress === "function" ? ref.attachmentDidChangeUploadProgress(this) : void 0 : void 0;
+      }
+    };
+
+    Attachment.prototype.toJSON = function() {
+      return this.getAttributes();
+    };
+
+    Attachment.prototype.getCacheKey = function() {
+      return [Attachment.__super__.getCacheKey.apply(this, arguments), this.attributes.getCacheKey(), this.getPreviewURL()].join("/");
+    };
+
+    Attachment.prototype.getPreviewURL = function() {
+      return this.previewURL || this.preloadingURL;
+    };
+
+    Attachment.prototype.setPreviewURL = function(url) {
+      var ref, ref1;
+      if (url !== this.getPreviewURL()) {
+        this.previewURL = url;
+        if ((ref = this.previewDelegate) != null) {
+          if (typeof ref.attachmentDidChangePreviewURL === "function") {
+            ref.attachmentDidChangePreviewURL(this);
+          }
+        }
+        return (ref1 = this.delegate) != null ? typeof ref1.attachmentDidChangePreviewURL === "function" ? ref1.attachmentDidChangePreviewURL(this) : void 0 : void 0;
+      }
+    };
+
+    Attachment.prototype.preloadURL = function() {
+      return this.preload(this.getURL(), this.releaseFile);
+    };
+
+    Attachment.prototype.preloadFile = function() {
+      if (this.file) {
+        this.fileObjectURL = URL.createObjectURL(this.file);
+        return this.preload(this.fileObjectURL);
+      }
+    };
+
+    Attachment.prototype.releasePreloadedFile = function() {
+      if (this.fileObjectURL) {
+        URL.revokeObjectURL(this.fileObjectURL);
+        return this.fileObjectURL = null;
+      }
+    };
+
+    Attachment.prototype.preload = function(url, callback) {
+      var operation;
+      if (url && url !== this.getPreviewURL()) {
+        this.preloadingURL = url;
+        operation = new Trix.ImagePreloadOperation(url);
+        return operation.then((function(_this) {
+          return function(arg) {
+            var height, width;
+            width = arg.width, height = arg.height;
+            _this.setAttributes({
+              width: width,
+              height: height
+            });
+            _this.preloadingURL = null;
+            _this.setPreviewURL(url);
+            return typeof callback === "function" ? callback() : void 0;
+          };
+        })(this));
+      }
+    };
+
+    return Attachment;
+
+  })(Trix.Object);
 
 }).call(this);
 (function() {

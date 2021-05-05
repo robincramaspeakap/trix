@@ -75,8 +75,7 @@ class Trix.CompositionController extends Trix.BasicObject
     return if @attachmentEditor?.attachment is attachment
     return unless element = @documentView.findElementForObject(attachment)
     @uninstallAttachmentEditor()
-    attachmentPiece = @composition.document.getAttachmentPieceForAttachment(attachment)
-    @attachmentEditor = new Trix.AttachmentEditorController attachmentPiece, element, @element
+    @attachmentEditor = new Trix.AttachmentEditorController attachment, element, @element
     @attachmentEditor.delegate = this
 
   uninstallAttachmentEditor: ->
@@ -88,18 +87,11 @@ class Trix.CompositionController extends Trix.BasicObject
       @uninstallAttachmentEditor()
       @installAttachmentEditorForAttachment(attachment)
 
-  editAttachmentCaption: ->
-    @attachmentEditor?.editCaption()
-
   # Attachment controller delegate
 
   didUninstallAttachmentEditor: ->
     @attachmentEditor = null
     @render()
-
-  attachmentEditorDidRequestUpdatingAttributesForAttachment: (attributes, attachment) ->
-    @delegate?.compositionControllerWillUpdateAttachment?(attachment)
-    @composition.updateAttributesForAttachment(attributes, attachment)
 
   attachmentEditorDidRequestRemovingAttributeForAttachment: (attribute, attachment) ->
     @delegate?.compositionControllerWillUpdateAttachment?(attachment)

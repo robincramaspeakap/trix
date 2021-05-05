@@ -1,36 +1,55 @@
 {makeElement, selectionElements} = Trix
 {classNames} = Trix.config.css
 
+MimeTypes = require("mimetypes")
+
 class Trix.AttachmentView extends Trix.ObjectView
-  @attachmentSelector: "[data-trix-attachment]"
+  @attachmentSelector: "[data-rel=attachment]"
 
   constructor: ->
     super
     @attachment = @object
     @attachment.uploadProgressDelegate = this
-    @attachmentPiece = @options.piece
 
   createContentNodes: ->
     []
 
   createNodes: ->
-    figure = makeElement({tagName: "figure", className: @getClassName()})
+    mimeType = @attachment.getContentType()
 
-    if @attachment.hasContent()
-      figure.innerHTML = @attachment.getContent()
+    icon = makeElement
+      tagName: "img"
+      attributes:
+        class: "fileicon mrm"
+        src: MimeTypes.iconForMimeType(mimeType)
+
+    title = makeElement
+      tagName: "a"
+      textContent: @attachment.getFilename()
+      attributes:
+        class: "title"
+        "data-href": @attachment.getAttribute("url")
+
+    if MimeTypes.shouldOpenInBrowser(mimeType)
+      title.setAttribute("target", "_blank")
     else
-      figure.appendChild(node) for node in @createContentNodes()
+      title.setAttribute("data-mimetype", mimeType)
+      title.setAttribute("download", @attachment.getFilename())
 
-    figure.appendChild(@createCaptionElement())
+    [icon, title]
 
-    data =
-      trixAttachment: JSON.stringify(@attachment)
-      trixContentType: @attachment.getContentType()
-      trixId: @attachment.id
+  createNodes: ->
+    shareItem = makeElement
+      tagName: "div"
+      attributes:
+        class: @getClassName()
+      data:
+        eid: @attachment.getAttribute("eid")
+        rel: "attachment"
 
-    attributes = @attachmentPiece.getAttributesForAttachment()
-    unless attributes.isEmpty()
-      data.trixAttributes = JSON.stringify(attributes)
+    shareItem.appendChild(node) for node in @createContentNodes()
+
+    data = {}
 
     if @attachment.isPending()
       @progressElement = makeElement
@@ -43,41 +62,25 @@ class Trix.AttachmentView extends Trix.ObjectView
           trixMutable: true
           trixStoreKey: ["progressElement", @attachment.id].join("/")
 
-      figure.appendChild(@progressElement)
+      shareItem.appendChild(@progressElement)
       data.trixSerialize = false
 
     if href = @getHref()
       element = makeElement("a", {href})
-      element.appendChild(figure)
+      element.appendChild(shareItem)
     else
-      element = figure
+      element = shareItem
 
     element.dataset[key] = value for key, value of data
     element.setAttribute("contenteditable", false)
 
-    [selectionElements.create("cursorTarget"), element, selectionElements.create("cursorTarget")]
-
-  createCaptionElement: ->
-    figcaption = makeElement(tagName: "figcaption", className: classNames.attachment.caption)
-
-    if caption = @attachmentPiece.getCaption()
-      figcaption.classList.add(classNames.attachment.captionEdited)
-      figcaption.textContent = caption
-    else
-      if filename = @attachment.getFilename()
-        figcaption.textContent = filename
-
-        if filesize = @attachment.getFormattedFilesize()
-          figcaption.appendChild(document.createTextNode(" "))
-          span = makeElement(tagName: "span", className: classNames.attachment.size, textContent: filesize)
-          figcaption.appendChild(span)
-
-    figcaption
+    [element]
 
   getClassName: ->
-    names = [classNames.attachment.container, "#{classNames.attachment.typePrefix}#{@attachment.getType()}"]
-    if extension = @attachment.getExtension()
-      names.push(extension)
+    names = [
+      Trix.config.blockAttributes.attachment.className,
+      if @attachment.isPreviewable() then "image" else "file"
+    ]
     names.join(" ")
 
   getHref: ->
