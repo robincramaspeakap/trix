@@ -137,7 +137,6 @@ class Trix.EditorController extends Trix.Controller
     @renderedCompositionRevision = @composition.revision
 
   compositionControllerDidFocus: ->
-    @toolbarController.hideDialog()
     @editorElement.notify("focus")
 
   compositionControllerDidBlur: ->
@@ -246,18 +245,6 @@ class Trix.EditorController extends Trix.Controller
     @composition.removeCurrentAttribute(attributeName)
     @render()
     @editorElement.focus() unless @selectionFrozen
-
-  toolbarWillShowDialog: (dialogElement) ->
-    @composition.expandSelectionForEditing()
-    @freezeSelection()
-
-  toolbarDidShowDialog: (dialogName) ->
-    @editorElement.notify("toolbar-dialog-show", {dialogName})
-
-  toolbarDidHideDialog: (dialogName) ->
-    @thawSelection()
-    @editorElement.focus()
-    @editorElement.notify("toolbar-dialog-hide", {dialogName})
 
   # Selection
 

@@ -5,21 +5,14 @@ class Trix.ToolbarController extends Trix.BasicObject
   attributeButtonSelector = "button[data-trix-attribute]"
   blockStyleSelector = "select.block"
   toolbarButtonSelector = [actionButtonSelector, attributeButtonSelector].join(", ")
-  dialogSelector = ".dialog[data-trix-dialog]"
-  activeDialogSelector = "#{dialogSelector}.active"
-  dialogButtonSelector = "#{dialogSelector} input[data-trix-method]"
-  dialogInputSelector = "#{dialogSelector} input[type=text], #{dialogSelector} input[type=url]"
 
   constructor: (@element) ->
     @attributes = {}
     @actions = {}
-    @resetDialogInputs()
 
     handleEvent "mousedown", onElement: @element, matchingSelector: actionButtonSelector, withCallback: @didClickActionButton
     handleEvent "mousedown", onElement: @element, matchingSelector: attributeButtonSelector, withCallback: @didClickAttributeButton
     handleEvent "click", onElement: @element, matchingSelector: toolbarButtonSelector, preventDefault: true
-    handleEvent "click", onElement: @element, matchingSelector: dialogButtonSelector, withCallback: @didClickDialogButton
-    handleEvent "keydown", onElement: @element, matchingSelector: dialogInputSelector, withCallback: @didKeyDownDialogInput
 
   # Event handlers
 
@@ -28,37 +21,17 @@ class Trix.ToolbarController extends Trix.BasicObject
     event.preventDefault()
     actionName = getActionName(element)
 
-    if @getDialog(actionName)
-      @toggleDialog(actionName)
-    else
-      @delegate?.toolbarDidInvokeAction(actionName)
+    @delegate?.toolbarDidInvokeAction(actionName)
+
 
   didClickAttributeButton: (event, element) =>
     @delegate?.toolbarDidClickButton()
     event.preventDefault()
     attributeName = getAttributeName(element)
+    return if attributeName is "href"
 
-    if @getDialog(attributeName)
-      @toggleDialog(attributeName)
-    else
-      @delegate?.toolbarDidToggleAttribute(attributeName)
-
+    @delegate?.toolbarDidToggleAttribute(attributeName)
     @refreshAttributeButtons()
-
-  didClickDialogButton: (event, element) =>
-    dialogElement = findClosestElementFromNode(element, matchingSelector: dialogSelector)
-    method = element.getAttribute("data-trix-method")
-    @[method].call(this, dialogElement)
-
-  didKeyDownDialogInput: (event, element) =>
-    if event.keyCode is 13 # Enter key
-      event.preventDefault()
-      attribute = element.getAttribute("name")
-      dialog = @getDialog(attribute)
-      @setAttribute(dialog)
-    if event.keyCode is 27 # Escape key
-      event.preventDefault()
-      @hideDialog()
 
   # Action buttons
 
@@ -91,7 +64,7 @@ class Trix.ToolbarController extends Trix.BasicObject
   refreshAttributeButtons: ->
     @eachAttributeButton (element, attributeName) =>
       element.disabled = @attributes[attributeName] is false
-      if @attributes[attributeName] or @dialogIsVisible(attributeName)
+      if @attributes[attributeName]
         element.classList.add("active")
       else
         element.classList.remove("active")
@@ -110,68 +83,6 @@ class Trix.ToolbarController extends Trix.BasicObject
         return true
     false
 
-  # Dialogs
-
-  dialogIsVisible: (dialogName) ->
-    if element = @getDialog(dialogName)
-      element.classList.contains("active")
-
-  toggleDialog: (dialogName) ->
-    if @dialogIsVisible(dialogName)
-      @hideDialog()
-    else
-      @showDialog(dialogName)
-
-  showDialog: (dialogName) ->
-    @hideDialog()
-    @delegate?.toolbarWillShowDialog()
-
-    element = @getDialog(dialogName)
-    element.classList.add("active")
-
-    for disabledInput in element.querySelectorAll("input[disabled]")
-      disabledInput.removeAttribute("disabled")
-
-    if attributeName = getAttributeName(element)
-      if input = getInputForDialog(element, dialogName)
-        input.value = @attributes[attributeName] ? ""
-        input.select()
-
-    @delegate?.toolbarDidShowDialog(dialogName)
-
-  setAttribute: (dialogElement) ->
-    attributeName = getAttributeName(dialogElement)
-    input = getInputForDialog(dialogElement, attributeName)
-    if input.willValidate and not input.checkValidity()
-      input.classList.add("validate")
-      input.focus()
-    else
-      @delegate?.toolbarDidUpdateAttribute(attributeName, input.value)
-      @hideDialog()
-
-  removeAttribute: (dialogElement) ->
-    attributeName = getAttributeName(dialogElement)
-    @delegate?.toolbarDidRemoveAttribute(attributeName)
-    @hideDialog()
-
-  hideDialog: ->
-    if element = @element.querySelector(activeDialogSelector)
-      element.classList.remove("active")
-      @resetDialogInputs()
-      @delegate?.toolbarDidHideDialog(getDialogName(element))
-
-  resetDialogInputs: ->
-    for input in @element.querySelectorAll(dialogInputSelector)
-      input.setAttribute("disabled", "disabled")
-      input.classList.remove("validate")
-
-  getDialog: (dialogName) ->
-    @element.querySelector(".dialog[data-trix-dialog=#{dialogName}]")
-
-  getInputForDialog = (element, attributeName) ->
-    attributeName ?= getAttributeName(element)
-    element.querySelector("input[name='#{attributeName}']")
-
   # General helpers
 
   getActionName = (element) ->
@@ -179,6 +90,3 @@ class Trix.ToolbarController extends Trix.BasicObject
 
   getAttributeName = (element) ->
     element.getAttribute("data-trix-attribute")
-
-  getDialogName = (element) ->
-    element.getAttribute("data-trix-dialog")
