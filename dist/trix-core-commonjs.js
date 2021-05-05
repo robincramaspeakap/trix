@@ -3288,7 +3288,9 @@ http://trix-editor.org/
         node = ref[i];
         shareItem.appendChild(node);
       }
-      data = {};
+      data = {
+        trixId: this.attachment.id
+      };
       if (this.attachment.isPending()) {
         this.progressElement = makeElement({
           tagName: "progress",
@@ -5340,6 +5342,10 @@ http://trix-editor.org/
       return {
         attachment: this.attachment.toJSON()
       };
+    };
+
+    AttachmentBlock.prototype.toString = function() {
+      return Trix.OBJECT_REPLACEMENT_CHARACTER;
     };
 
     AttachmentBlock.prototype.getLength = function() {
@@ -7399,11 +7405,6 @@ http://trix-editor.org/
       return this.editingAttachment = null;
     };
 
-    Composition.prototype.canEditAttachmentCaption = function() {
-      var ref;
-      return (ref = this.editingAttachment) != null ? ref.isPreviewable() : void 0;
-    };
-
     Composition.prototype.updateAttributesForAttachment = function(attributes, attachment) {
       return this.setDocument(this.document.updateAttributesForAttachment(attributes, attachment));
     };
@@ -7459,7 +7460,7 @@ http://trix-editor.org/
     Composition.prototype.getAttachmentAtRange = function(range) {
       var document;
       document = this.document.getDocumentAtRange(range);
-      if (document.toString() === (Trix.OBJECT_REPLACEMENT_CHARACTER + "\n")) {
+      if (document.toString() === ("" + Trix.OBJECT_REPLACEMENT_CHARACTER)) {
         return document.getAttachments()[0];
       }
     };
