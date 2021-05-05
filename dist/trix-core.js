@@ -1478,22 +1478,25 @@ http://trix-editor.org/
       }
     },
     heading1: {
-      tagName: "h1",
-      test: function(element) {
-        return Trix.tagName(element) === "h1";
-      }
+      heading: true
+    },
+    tagName: "h1",
+    test: function(element) {
+      return Trix.tagName(element) === "h1";
     },
     heading2: {
-      tagName: "h2",
-      test: function(element) {
-        return Trix.tagName(element) === "h2";
-      }
+      heading: true
+    },
+    tagName: "h2",
+    test: function(element) {
+      return Trix.tagName(element) === "h2";
     },
     heading3: {
-      tagName: "h3",
-      test: function(element) {
-        return Trix.tagName(element) === "h3";
-      }
+      heading: true
+    },
+    tagName: "h3",
+    test: function(element) {
+      return Trix.tagName(element) === "h3";
     },
     attachment: {
       tagName: "div",
@@ -5111,6 +5114,10 @@ http://trix-editor.org/
         }
       }
       return results;
+    };
+
+    Block.prototype.isHeading = function() {
+      return this.getConfig("heading") != null;
     };
 
     Block.prototype.isListItem = function() {
