@@ -3677,7 +3677,7 @@ http://trix-editor.org/
       var attachment, constructor, view;
       attachment = this.block.getAttachment();
       constructor = attachment.isPreviewable() ? Trix.PreviewableAttachmentView : Trix.AttachmentView;
-      view = this.createChildView(constructor, attachment);
+      view = this.findOrCreateCachedChildView(constructor, attachment);
       return view.getNodes();
     };
 
@@ -5501,7 +5501,7 @@ http://trix-editor.org/
       if ((element != null ? element.nodeType : void 0) !== Node.ELEMENT_NODE) {
         return;
       }
-      if (nodeIsAttachmentElement(element)) {
+      if (nodeIsAttachmentWrapper(element)) {
         return;
       }
       return tagName(element) === "script" || element.getAttribute("data-trix-serialize") === "false";
