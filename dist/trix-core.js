@@ -6129,17 +6129,18 @@ http://trix-editor.org/
       var blockList;
       blockList = this.blockList;
       this.eachBlockAtRange(range, function(block, textRange, index) {
-        return blockList = blockList.editObjectAtIndex(index, function() {
-          if (getBlockConfig(attribute)) {
-            return block.addAttribute(attribute, value);
+        blockList = blockList.editObjectAtIndex(index, function() {});
+        if (attribute === "attachment") {
+          return blockList = blockList.removeObjectAtIndex(index);
+        } else if (getBlockConfig(attribute)) {
+          return block.addAttribute(attribute, value);
+        } else {
+          if (textRange[0] === textRange[1]) {
+            return block;
           } else {
-            if (textRange[0] === textRange[1]) {
-              return block;
-            } else {
-              return block.copyWithText(block.text.addAttributeAtRange(attribute, value, textRange));
-            }
+            return block.copyWithText(block.text.addAttributeAtRange(attribute, value, textRange));
           }
-        });
+        }
       });
       return new this.constructor(blockList);
     };
@@ -6954,7 +6955,7 @@ http://trix-editor.org/
       var range;
       if (range = this.document.getRangeOfAttachment(attachment)) {
         this.stopEditingAttachment();
-        this.setDocument(this.document.removeTextAtRange(range));
+        this.setDocument(this.document.removeAttributeAtRange("attachment", range));
         return this.setSelection(range[0]);
       }
     };

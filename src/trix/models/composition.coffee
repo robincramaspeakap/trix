@@ -164,7 +164,7 @@ class Trix.Composition extends Trix.BasicObject
   removeAttachment: (attachment) ->
     if range = @document.getRangeOfAttachment(attachment)
       @stopEditingAttachment()
-      @setDocument(@document.removeTextAtRange(range))
+      @setDocument(@document.removeAttributeAtRange("attachment", range))
       @setSelection(range[0])
 
   removeLastBlockAttribute: ->
