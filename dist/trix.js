@@ -2855,11 +2855,21 @@ window.CustomElements.addModule(function(scope) {
   Trix.config.textAttributes = {
     bold: {
       tagName: "b",
-      inheritable: true
+      inheritable: true,
+      parser: function(element) {
+        var style;
+        style = window.getComputedStyle(element);
+        return (style["fontWeight"] === "bold" || style["fontWeight"] >= 600) && style["fontSize"] === "12px";
+      }
     },
     italic: {
       tagName: "i",
-      inheritable: true
+      inheritable: true,
+      parser: function(element) {
+        var style;
+        style = window.getComputedStyle(element);
+        return style["fontStyle"] === "italic";
+      }
     },
     href: {
       groupTagName: "a",
@@ -2876,7 +2886,12 @@ window.CustomElements.addModule(function(scope) {
     },
     underline: {
       tagName: "u",
-      inheritable: true
+      inheritable: true,
+      parser: function(element) {
+        var style;
+        style = window.getComputedStyle(element);
+        return /underline/.test(style["textDecoration"]);
+      }
     },
     frozen: {
       style: {
@@ -3671,6 +3686,7 @@ window.CustomElements.addModule(function(scope) {
       var eventName;
       this.element = element1;
       this.resetInputSummary();
+      this.mutationCount = 0;
       this.mutationObserver = new Trix.MutationObserver(this.element);
       this.mutationObserver.delegate = this;
       for (eventName in this.events) {
@@ -3742,6 +3758,7 @@ window.CustomElements.addModule(function(scope) {
 
     InputController.prototype.elementDidMutate = function(mutationSummary) {
       var ref;
+      this.mutationCount++;
       if (this.isComposing()) {
         return (ref = this.delegate) != null ? typeof ref.inputControllerDidAllowUnhandledInput === "function" ? ref.inputControllerDidAllowUnhandledInput() : void 0 : void 0;
       } else {
@@ -3785,6 +3802,18 @@ window.CustomElements.addModule(function(scope) {
       textChanged = Object.keys(mutationSummary).length > 0;
       composedEmptyString = ((ref = this.compositionInput) != null ? ref.getEndData() : void 0) === "";
       return textChanged || !composedEmptyString;
+    };
+
+    InputController.prototype.unlessMutationOccurs = function(callback) {
+      var mutationCount;
+      mutationCount = this.mutationCount;
+      return defer((function(_this) {
+        return function() {
+          if (mutationCount === _this.mutationCount) {
+            return callback();
+          }
+        };
+      })(this));
     };
 
     InputController.prototype.attachFiles = function(files) {
