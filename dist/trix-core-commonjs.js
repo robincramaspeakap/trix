@@ -673,7 +673,7 @@ http://trix-editor.org/
       }
     },
     nodeIsAttachmentElement: function(node) {
-      return Trix.elementMatchesSelector(node, Trix.AttachmentView.attachmentSelector);
+      return node.nodeType === Node.ELEMENT_NODE && node.classList.contains("attachment-wrapper") && node.childElementCount === 1 && Trix.elementMatchesSelector(node.firstElementChild, Trix.AttachmentView.attachmentSelector);
     },
     nodeIsEmptyTextNode: function(node) {
       return Trix.nodeIsTextNode(node) && (node != null ? node.data : void 0) === "";
@@ -3241,10 +3241,6 @@ http://trix-editor.org/
     }
 
     AttachmentView.prototype.createContentNodes = function() {
-      return [];
-    };
-
-    AttachmentView.prototype.createNodes = function() {
       var icon, mimeType, title;
       mimeType = this.attachment.getContentType();
       icon = makeElement({
@@ -3272,7 +3268,15 @@ http://trix-editor.org/
     };
 
     AttachmentView.prototype.createNodes = function() {
-      var comment, data, i, key, len, node, ref, shareItem, value;
+      var comment, data, i, key, len, node, ref, shareItem, value, wrapper;
+      wrapper = makeElement({
+        tagName: "div",
+        attributes: {
+          "class": "attachment-wrapper"
+        }
+      });
+      comment = document.createComment("block");
+      wrapper.appendChild(comment);
       shareItem = makeElement({
         tagName: "div",
         attributes: {
@@ -3284,8 +3288,6 @@ http://trix-editor.org/
           rel: "attachment"
         }
       });
-      comment = document.createComment("block");
-      shareItem.appendChild(comment);
       ref = this.createContentNodes();
       for (i = 0, len = ref.length; i < len; i++) {
         node = ref[i];
@@ -3304,7 +3306,7 @@ http://trix-editor.org/
           },
           data: {
             trixMutable: true,
-            trixStoreKey: ["progressElement", this.attachment.id].join("/")
+            trixStoreKey: this.attachment.getCacheKey("progressElement")
           }
         });
         shareItem.appendChild(this.progressElement);
@@ -3315,7 +3317,8 @@ http://trix-editor.org/
         shareItem.dataset[key] = value;
       }
       shareItem.setAttribute("contenteditable", false);
-      return [shareItem];
+      wrapper.appendChild(shareItem);
+      return [wrapper];
     };
 
     AttachmentView.prototype.getClassName = function() {
@@ -5753,14 +5756,15 @@ http://trix-editor.org/
     };
 
     getAttachmentAttributes = function(element) {
-      var a, isImage;
-      isImage = element.classList.contains("image");
+      var a, isImage, shareItem;
+      shareItem = element.firstElementChild;
+      isImage = shareItem.classList.contains("image");
       return {
-        contentType: element.getAttribute("data-mime-type"),
-        eid: element.getAttribute("data-eid"),
-        filename: isImage ? "" : element.querySelector("a").textContent,
+        contentType: shareItem.getAttribute("data-mime-type"),
+        eid: shareItem.getAttribute("data-eid"),
+        filename: isImage ? "" : shareItem.querySelector("a").textContent,
         previewable: isImage,
-        url: isImage ? element.querySelector("img").getAttribute("src") : (a = element.querySelector("a"), a.getAttribute("data-href") || a.getAttribute("href"))
+        url: isImage ? shareItem.querySelector("img").getAttribute("src") : (a = shareItem.querySelector("a"), a.getAttribute("data-href") || a.getAttribute("href"))
       };
     };
 
@@ -8194,7 +8198,7 @@ http://trix-editor.org/
         if (nodeIsAttachmentElement(node)) {
           location.index++;
           location.offset = 0;
-          if (node === container) {
+          if (node.firstElementChild === container) {
             break;
           }
         } else if (node === container && nodeIsTextNode(container)) {
@@ -8247,7 +8251,7 @@ http://trix-editor.org/
         return;
       }
       if (nodeIsAttachmentElement(node)) {
-        container = node;
+        container = node.firstElementChild;
         offset = 0;
       } else if (nodeIsTextNode(node)) {
         container = node;

@@ -12,9 +12,6 @@ class Trix.AttachmentView extends Trix.ObjectView
     @attachment.uploadProgressDelegate = this
 
   createContentNodes: ->
-    []
-
-  createNodes: ->
     mimeType = @attachment.getContentType()
 
     icon = makeElement
@@ -39,6 +36,14 @@ class Trix.AttachmentView extends Trix.ObjectView
     [icon, title]
 
   createNodes: ->
+    wrapper = makeElement
+      tagName: "div"
+      attributes:
+        class: "attachment-wrapper"
+
+    comment = document.createComment("block")
+    wrapper.appendChild(comment)
+
     shareItem = makeElement
       tagName: "div"
       attributes:
@@ -47,9 +52,6 @@ class Trix.AttachmentView extends Trix.ObjectView
         eid: @attachment.getAttribute("eid")
         mimeType: @attachment.getContentType()
         rel: "attachment"
-
-    comment = document.createComment("block")
-    shareItem.appendChild(comment)
 
     shareItem.appendChild(node) for node in @createContentNodes()
 
@@ -65,7 +67,7 @@ class Trix.AttachmentView extends Trix.ObjectView
           max: 100
         data:
           trixMutable: true
-          trixStoreKey: ["progressElement", @attachment.id].join("/")
+          trixStoreKey: @attachment.getCacheKey("progressElement")
 
       shareItem.appendChild(@progressElement)
       data.trixSerialize = false
@@ -73,7 +75,9 @@ class Trix.AttachmentView extends Trix.ObjectView
     shareItem.dataset[key] = value for key, value of data
     shareItem.setAttribute("contenteditable", false)
 
-    [shareItem]
+    wrapper.appendChild(shareItem)
+
+    [wrapper]
 
   getClassName: ->
     names = [

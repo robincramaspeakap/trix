@@ -1979,7 +1979,7 @@ window.CustomElements.addModule(function(scope) {
       }
     },
     nodeIsAttachmentElement: function(node) {
-      return Trix.elementMatchesSelector(node, Trix.AttachmentView.attachmentSelector);
+      return node.nodeType === Node.ELEMENT_NODE && node.classList.contains("attachment-wrapper") && node.childElementCount === 1 && Trix.elementMatchesSelector(node.firstElementChild, Trix.AttachmentView.attachmentSelector);
     },
     nodeIsEmptyTextNode: function(node) {
       return Trix.nodeIsTextNode(node) && (node != null ? node.data : void 0) === "";
@@ -4547,10 +4547,6 @@ window.CustomElements.addModule(function(scope) {
     }
 
     AttachmentView.prototype.createContentNodes = function() {
-      return [];
-    };
-
-    AttachmentView.prototype.createNodes = function() {
       var icon, mimeType, title;
       mimeType = this.attachment.getContentType();
       icon = makeElement({
@@ -4578,7 +4574,15 @@ window.CustomElements.addModule(function(scope) {
     };
 
     AttachmentView.prototype.createNodes = function() {
-      var comment, data, i, key, len, node, ref, shareItem, value;
+      var comment, data, i, key, len, node, ref, shareItem, value, wrapper;
+      wrapper = makeElement({
+        tagName: "div",
+        attributes: {
+          "class": "attachment-wrapper"
+        }
+      });
+      comment = document.createComment("block");
+      wrapper.appendChild(comment);
       shareItem = makeElement({
         tagName: "div",
         attributes: {
@@ -4590,8 +4594,6 @@ window.CustomElements.addModule(function(scope) {
           rel: "attachment"
         }
       });
-      comment = document.createComment("block");
-      shareItem.appendChild(comment);
       ref = this.createContentNodes();
       for (i = 0, len = ref.length; i < len; i++) {
         node = ref[i];
@@ -4610,7 +4612,7 @@ window.CustomElements.addModule(function(scope) {
           },
           data: {
             trixMutable: true,
-            trixStoreKey: ["progressElement", this.attachment.id].join("/")
+            trixStoreKey: this.attachment.getCacheKey("progressElement")
           }
         });
         shareItem.appendChild(this.progressElement);
@@ -4621,7 +4623,8 @@ window.CustomElements.addModule(function(scope) {
         shareItem.dataset[key] = value;
       }
       shareItem.setAttribute("contenteditable", false);
-      return [shareItem];
+      wrapper.appendChild(shareItem);
+      return [wrapper];
     };
 
     AttachmentView.prototype.getClassName = function() {
@@ -7059,14 +7062,15 @@ window.CustomElements.addModule(function(scope) {
     };
 
     getAttachmentAttributes = function(element) {
-      var a, isImage;
-      isImage = element.classList.contains("image");
+      var a, isImage, shareItem;
+      shareItem = element.firstElementChild;
+      isImage = shareItem.classList.contains("image");
       return {
-        contentType: element.getAttribute("data-mime-type"),
-        eid: element.getAttribute("data-eid"),
-        filename: isImage ? "" : element.querySelector("a").textContent,
+        contentType: shareItem.getAttribute("data-mime-type"),
+        eid: shareItem.getAttribute("data-eid"),
+        filename: isImage ? "" : shareItem.querySelector("a").textContent,
         previewable: isImage,
-        url: isImage ? element.querySelector("img").getAttribute("src") : (a = element.querySelector("a"), a.getAttribute("data-href") || a.getAttribute("href"))
+        url: isImage ? shareItem.querySelector("img").getAttribute("src") : (a = shareItem.querySelector("a"), a.getAttribute("data-href") || a.getAttribute("href"))
       };
     };
 
@@ -9500,7 +9504,7 @@ window.CustomElements.addModule(function(scope) {
         if (nodeIsAttachmentElement(node)) {
           location.index++;
           location.offset = 0;
-          if (node === container) {
+          if (node.firstElementChild === container) {
             break;
           }
         } else if (node === container && nodeIsTextNode(container)) {
@@ -9553,7 +9557,7 @@ window.CustomElements.addModule(function(scope) {
         return;
       }
       if (nodeIsAttachmentElement(node)) {
-        container = node;
+        container = node.firstElementChild;
         offset = 0;
       } else if (nodeIsTextNode(node)) {
         container = node;

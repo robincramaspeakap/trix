@@ -18,7 +18,7 @@ class Trix.LocationMapper
       if nodeIsAttachmentElement(node)
         location.index++
         location.offset = 0
-        break if node is container
+        break if node.firstElementChild is container
       else if node is container and nodeIsTextNode(container)
         unless nodeIsCursorTarget(node)
           location.offset += offset
@@ -56,7 +56,7 @@ class Trix.LocationMapper
     return unless node
 
     if nodeIsAttachmentElement(node)
-      container = node
+      container = node.firstElementChild
       offset = 0
     else if nodeIsTextNode(node)
       container = node
