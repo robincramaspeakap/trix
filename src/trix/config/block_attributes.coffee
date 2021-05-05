@@ -1,6 +1,6 @@
 Trix.config.blockAttributes = attributes =
   default:
-    tagName: "div"
+    tagName: "p"
     parse: false
   quote:
     tagName: "blockquote"
@@ -35,3 +35,12 @@ Trix.config.blockAttributes = attributes =
     nestable: true
     test: (element) ->
       Trix.tagName(element.parentNode) is attributes[@listAttribute].tagName
+  heading1:
+    tagName: "h1"
+    parse: false
+  heading2:
+    tagName: "h2"
+    parse: false
+  heading3:
+    tagName: "h3"
+    parse: false
