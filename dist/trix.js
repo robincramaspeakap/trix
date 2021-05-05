@@ -2810,7 +2810,6 @@ window.CustomElements.addModule(function(scope) {
       return Trix.tagName(element) === "h3";
     },
     attachment: {
-      tagName: "div",
       className: "shareitem"
     }
   };

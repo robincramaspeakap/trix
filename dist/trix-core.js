@@ -1504,7 +1504,6 @@ http://trix-editor.org/
       return Trix.tagName(element) === "h3";
     },
     attachment: {
-      tagName: "div",
       className: "shareitem"
     }
   };
