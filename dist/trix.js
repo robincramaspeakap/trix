@@ -4578,7 +4578,7 @@ window.CustomElements.addModule(function(scope) {
     };
 
     AttachmentView.prototype.createNodes = function() {
-      var data, element, href, i, key, len, node, ref, shareItem, value;
+      var comment, data, element, href, i, key, len, node, ref, shareItem, value;
       shareItem = makeElement({
         tagName: "div",
         attributes: {
@@ -4589,6 +4589,8 @@ window.CustomElements.addModule(function(scope) {
           rel: "attachment"
         }
       });
+      comment = document.createComment("block");
+      shareItem.appendChild(comment);
       ref = this.createContentNodes();
       for (i = 0, len = ref.length; i < len; i++) {
         node = ref[i];
@@ -9478,7 +9480,7 @@ window.CustomElements.addModule(function(scope) {
     }
 
     LocationMapper.prototype.findLocationFromContainerAndOffset = function(container, offset, arg) {
-      var attachmentElement, childIndex, foundBlock, location, node, strict, walker;
+      var childIndex, foundBlock, location, node, strict, walker;
       strict = (arg != null ? arg : {
         strict: true
       }).strict;
@@ -9488,16 +9490,18 @@ window.CustomElements.addModule(function(scope) {
         index: 0,
         offset: 0
       };
-      if (attachmentElement = this.findAttachmentElementParentForNode(container)) {
-        container = attachmentElement.parentNode;
-        offset = findChildIndexOfNode(attachmentElement);
-      }
       walker = walkTree(this.element, {
         usingFilter: rejectAttachmentContents
       });
       while (walker.nextNode()) {
         node = walker.currentNode;
-        if (node === container && nodeIsTextNode(container)) {
+        if (nodeIsAttachmentElement(node)) {
+          location.index++;
+          location.offset = 0;
+          if (node === container) {
+            break;
+          }
+        } else if (node === container && nodeIsTextNode(container)) {
           if (!nodeIsCursorTarget(node)) {
             location.offset += offset;
           }
@@ -9546,7 +9550,10 @@ window.CustomElements.addModule(function(scope) {
       if (!node) {
         return;
       }
-      if (nodeIsTextNode(node)) {
+      if (nodeIsAttachmentElement(node)) {
+        container = node;
+        offset = 0;
+      } else if (nodeIsTextNode(node)) {
         container = node;
         string = node.textContent;
         offset = location.offset - nodeOffset;
@@ -9598,15 +9605,6 @@ window.CustomElements.addModule(function(scope) {
       return [node, nodeOffset];
     };
 
-    LocationMapper.prototype.findAttachmentElementParentForNode = function(node) {
-      while (node && node !== this.element) {
-        if (nodeIsAttachmentElement(node)) {
-          return node;
-        }
-        node = node.parentNode;
-      }
-    };
-
     LocationMapper.prototype.getSignificantNodesForIndex = function(index) {
       var blockIndex, node, nodes, recordingNodes, walker;
       nodes = [];
@@ -9616,14 +9614,18 @@ window.CustomElements.addModule(function(scope) {
       recordingNodes = false;
       while (walker.nextNode()) {
         node = walker.currentNode;
-        if (nodeIsBlockStartComment(node)) {
+        if (nodeIsBlockStartComment(node) || nodeIsAttachmentElement(node)) {
           if (typeof blockIndex !== "undefined" && blockIndex !== null) {
             blockIndex++;
           } else {
             blockIndex = 0;
           }
           if (blockIndex === index) {
-            recordingNodes = true;
+            if (nodeIsAttachmentElement(node)) {
+              nodes.push(node);
+            } else {
+              recordingNodes = true;
+            }
           } else if (recordingNodes) {
             break;
           }
