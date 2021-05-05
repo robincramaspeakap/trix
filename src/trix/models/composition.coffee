@@ -3,6 +3,8 @@
 
 {normalizeRange, rangesAreEqual, rangeIsCollapsed, objectsAreEqual, arrayStartsWith, summarizeArrayChange, getAllAttributeNames, getBlockConfig, getTextConfig, extend} = Trix
 
+urlRegex = require('regex-weburl')
+
 class Trix.Composition extends Trix.BasicObject
   constructor: ->
     @document = new Trix.Document
@@ -56,6 +58,9 @@ class Trix.Composition extends Trix.BasicObject
     @notifyDelegateOfInsertionAtRange([startPosition, endPosition])
 
   insertString: (string, options) ->
+    if urlRegex.test(string)
+      return @insertLink(string, string)
+
     attributes = @getCurrentTextAttributes()
     text = Trix.Text.textForStringWithAttributes(string, attributes)
     @insertText(text, options)

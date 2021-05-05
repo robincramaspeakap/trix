@@ -8069,11 +8069,13 @@ window.CustomElements.addModule(function(scope) {
 
 }).call(this);
 (function() {
-  var arrayStartsWith, extend, getAllAttributeNames, getBlockConfig, getTextConfig, normalizeRange, objectsAreEqual, rangeIsCollapsed, rangesAreEqual, summarizeArrayChange,
+  var arrayStartsWith, extend, getAllAttributeNames, getBlockConfig, getTextConfig, normalizeRange, objectsAreEqual, rangeIsCollapsed, rangesAreEqual, summarizeArrayChange, urlRegex,
     extend1 = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     hasProp = {}.hasOwnProperty;
 
   normalizeRange = Trix.normalizeRange, rangesAreEqual = Trix.rangesAreEqual, rangeIsCollapsed = Trix.rangeIsCollapsed, objectsAreEqual = Trix.objectsAreEqual, arrayStartsWith = Trix.arrayStartsWith, summarizeArrayChange = Trix.summarizeArrayChange, getAllAttributeNames = Trix.getAllAttributeNames, getBlockConfig = Trix.getBlockConfig, getTextConfig = Trix.getTextConfig, extend = Trix.extend;
+
+  urlRegex = require('regex-weburl');
 
   Trix.Composition = (function(superClass) {
     var placeholder;
@@ -8156,6 +8158,9 @@ window.CustomElements.addModule(function(scope) {
 
     Composition.prototype.insertString = function(string, options) {
       var attributes, text;
+      if (urlRegex.test(string)) {
+        return this.insertLink(string, string);
+      }
       attributes = this.getCurrentTextAttributes();
       text = Trix.Text.textForStringWithAttributes(string, attributes);
       return this.insertText(text, options);
