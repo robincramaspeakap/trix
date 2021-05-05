@@ -1,5 +1,5 @@
 {arraysAreEqual, normalizeSpaces, makeElement, tagName, getBlockTagNames, walkTree,
- findClosestElementFromNode, elementContainsNode, nodeIsAttachmentElement, extend} = Trix
+ findClosestElementFromNode, elementContainsNode, nodeIsAttachmentWrapper, extend} = Trix
 
 class Trix.HTMLParser extends Trix.BasicObject
   allowedAttributes = "style href src width height class target data-eid data-href data-mime-type data-rel".split(" ")
@@ -92,7 +92,7 @@ class Trix.HTMLParser extends Trix.BasicObject
       when Node.TEXT_NODE
         @processTextNode(node)
       when Node.ELEMENT_NODE
-        if not nodeIsAttachmentElement(node)
+        if not nodeIsAttachmentWrapper(node)
           @appendBlockForElement(node)
         @processElement(node)
 
@@ -133,7 +133,7 @@ class Trix.HTMLParser extends Trix.BasicObject
       @appendStringWithAttributes(string, @getTextAttributes(node.parentNode))
 
   processElement: (element) ->
-    if nodeIsAttachmentElement(element)
+    if nodeIsAttachmentWrapper(element)
       attributes = getAttachmentAttributes(element)
       @appendAttachmentForAttributesWithElement(attributes, element)
       # We have everything we need so avoid processing inner nodes
