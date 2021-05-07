@@ -66,7 +66,7 @@ class Trix.HTMLParser extends Trix.BasicObject
           if elementIsRemovable(node)
             nodesToRemove.push(node)
           else
-          for {name, value} in [element.attributes...]
+          for {name, value} in [node.attributes...]
             unless isAllowedAttribute(name, value)
                 node.removeAttribute(name)
         when Node.COMMENT_NODE

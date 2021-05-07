@@ -6805,7 +6805,7 @@ window.CustomElements.addModule(function(scope) {
             } else {
 
             }
-            ref1 = slice.call(element.attributes);
+            ref1 = slice.call(node.attributes);
             for (j = 0, len1 = ref1.length; j < len1; j++) {
               ref2 = ref1[j], name = ref2.name, value = ref2.value;
               if (!isAllowedAttribute(name, value)) {
